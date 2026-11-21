@@ -43,16 +43,35 @@ function laneColor(i, k) {
 }
 
 // chart
+// 곡마다 난이도별 채보 배열: [{ name, level, keys, bpm, offset, notes }]
 // notes: { t: ms, l: lane, d: hold ms }
-function loadChart(song) {
-  const saved = store.get('chart:' + song.id);
-  if (saved) return Object.assign({ keys: 4 }, JSON.parse(saved));
-  return { keys: settings.keyCount, bpm: song.bpm || 120, offset: song.offset || 0, notes: [] };
+const DIFF_NAMES = ['Easy', 'Normal', 'Hard', 'Insane', 'Expert'];
+
+function newChart(song, base = {}) {
+  return {
+    name: 'Normal', level: 1,
+    keys: base.keys || settings.keyCount,
+    bpm: base.bpm || song.bpm || 120,
+    offset: base.offset ?? song.offset ?? 0,
+    notes: [],
+  };
 }
-function saveChart(song, chart) {
-  chart.notes.sort((a, b) => a.t - b.t);
-  store.set('chart:' + song.id, JSON.stringify(chart));
+function loadCharts(song) {
+  try {
+    const saved = JSON.parse(store.get('charts:' + song.id));
+    if (Array.isArray(saved) && saved.length) return saved;
+  } catch {}
+  const old = store.get('chart:' + song.id); // 난이도 생기기 전 저장 형식
+  if (old) {
+    try { return [Object.assign(newChart(song), JSON.parse(old))]; } catch {}
+  }
+  return [newChart(song)];
 }
+function saveCharts(song, charts) {
+  charts.forEach((c) => c.notes.sort((a, b) => a.t - b.t));
+  store.set('charts:' + song.id, JSON.stringify(charts));
+}
+const diffLabel = (c) => `${c.name} Lv.${c.level}`;
 
 // 채보 없으면 대충 자동 생성
 function autoChart(chart, durationMs) {

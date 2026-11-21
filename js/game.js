@@ -11,13 +11,14 @@ const Game = (() => {
   const stage = document.createElement('canvas');
   stage.width = W; stage.height = H;
 
-  let song, opts, keys, left, total, binds, colors, glows, runId = 0, paused, startAt, started;
+  let song, opts, diffName, keys, left, total, binds, colors, glows, runId = 0, paused, startAt, started;
   let lanes, next, holds, pressed, flash, stats, last, errors, hp, endTime, clock;
 
   function start(s, o = {}) {
     song = s; opts = o;
     const run = ++runId;
-    const chart = o.chart || loadChart(s);
+    const chart = o.chart || loadCharts(s)[0];
+    diffName = diffLabel(chart);
     keys = chart.keys;
     binds = settings.binds[keys];
     COL = touchMode ? Math.min(150, Math.floor(1100 / keys)) : 76;
@@ -241,7 +242,7 @@ const Game = (() => {
     ctx.font = '700 18px "Noto Sans KR", sans-serif';
     ctx.fillText(song.title, 24, 40);
     ctx.font = '13px "Noto Sans KR", sans-serif'; ctx.fillStyle = '#888888';
-    ctx.fillText(`${keys}K · 속도 ${settings.speed}${touchMode ? "" : " · Esc 일시정지"}`, 24, 62);
+    ctx.fillText(`${diffName} · ${keys}K · 속도 ${settings.speed}${touchMode ? "" : " · Esc 일시정지"}`, 24, 62);
   }
 
   const judged = () => stats.count.reduce((a, b) => a + b, 0);

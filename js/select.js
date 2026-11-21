@@ -2,6 +2,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 const Select = {
   songs: [],
   current: null,
+  charts: [],
+  diff: 0,
   mode: 'play', // 'play' | 'edit'
 
   async open(mode) {
@@ -34,11 +36,13 @@ const Select = {
   },
 
   async pick(song) {
+    if (song !== this.current) this.diff = 0;
     this.current = song;
+    this.charts = loadCharts(song);
+    this.diff = Math.min(this.diff, this.charts.length - 1);
     this.render();
-    const chart = loadChart(song);
+    this.renderDiffs();
     $('#selTitle').textContent = song.title;
-    $('#selInfo').textContent = `${song.artist || ''} · ${chart.keys}K · BPM ${chart.bpm} · 노트 ${chart.notes.length || '자동'}`;
     try {
       await loadVideo(song);
       const r = $('#preview').getBoundingClientRect();
@@ -50,6 +54,13 @@ const Select = {
     }
   },
 
+  renderDiffs() {
+    const chart = this.charts[this.diff];
+    $('#diffList').innerHTML = this.charts.map((c, i) =>
+      `<button data-d="${i}" class="${i === this.diff ? 'on' : ''}">${esc(diffLabel(c))}</button>`).join('');
+    $('#selInfo').textContent = `${this.current.artist || ''} · ${chart.keys}K · BPM ${chart.bpm} · 노트 ${chart.notes.length || '자동'}`;
+  },
+
   hidePreview() {
     video.pause();
     video.removeAttribute('style');
@@ -59,11 +70,17 @@ const Select = {
     if (!this.current) return toast('곡을 선택하세요');
     video.play().catch(() => {});
     this.hidePreview();
-    if (this.mode === 'play') Game.start(this.current);
-    else Editor.open(this.current);
+    if (this.mode === 'play') Game.start(this.current, { chart: this.charts[this.diff] });
+    else Editor.open(this.current, this.diff);
   },
 };
 
+$('#diffList').onclick = (e) => {
+  const d = e.target.dataset.d;
+  if (d === undefined) return;
+  Select.diff = Number(d);
+  Select.renderDiffs();
+};
 $('#search').oninput = () => Select.render();
 $('#startBtn').onclick = () => Select.start();
 $('#dbFiles').onchange = async (e) => {

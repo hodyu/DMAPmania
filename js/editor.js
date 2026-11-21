@@ -3,16 +3,14 @@ const Editor = (() => {
   const ctx = cv.getContext('2d');
   const LANE_X = 10, STAGE_W = 400, HEAD_Y = 440, ZOOM = 0.3; // px / ms
   const laneW = () => STAGE_W / chart.keys;
-  let song, chart, cur = 0, tool = 'note', drag = null, playing = false;
+  let song, charts, chart, cur = 0, tool = 'note', drag = null, playing = false;
 
-  function open(s) {
+  function open(s, idx = 0) {
     if (!song || song.id !== s.id) cur = 0;
     song = s;
-    chart = loadChart(s);
+    charts = loadCharts(s);
     $('#edTitle').textContent = s.title;
-    $('#edBpm').value = chart.bpm;
-    $('#edOffset').value = chart.offset;
-    $('#edKeys').value = chart.keys;
+    selectDiff(Math.min(idx, charts.length - 1));
     show('editor');
     loadVideo(s).then(() => { seekSong(song, cur); draw(); }).catch((e) => toast(e.message));
     draw();
@@ -129,28 +127,46 @@ const Editor = (() => {
   };
   $('#edSeek').oninput = (e) => seek((e.target.value / 1000) * duration());
   $('#edPlay').onclick = toggle;
-  $('#edSave').onclick = () => { saveChart(song, chart); toast('저장했습니다'); };
-  $('#edExport').onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(chart));
-      toast('채보 JSON을 클립보드에 복사했습니다');
-    } catch {
-      toast('복사하지 못했습니다');
-    }
-  };
-  $('#edImport').onchange = async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    chart = JSON.parse(await f.text());
+  $('#edSave').onclick = () => { saveCharts(song, charts); toast('저장했습니다'); };
+
+  // 난이도
+  function selectDiff(i) {
+    chart = charts[i];
+    $('#edDiff').innerHTML = charts.map((c, j) => `<option value="${j}">${esc(diffLabel(c))}</option>`).join('');
+    $('#edDiff').value = i;
+    $('#edDiffName').value = chart.name;
+    $('#edLevel').value = chart.level;
     $('#edBpm').value = chart.bpm;
     $('#edOffset').value = chart.offset;
-    $('#edKeys').value = chart.keys = chart.keys || 4;
+    $('#edKeys').value = chart.keys;
     draw();
+  }
+  const refreshDiffs = () => selectDiff(charts.indexOf(chart));
+  $('#edDiff').onchange = (e) => selectDiff(Number(e.target.value));
+  $('#edDiffName').onchange = (e) => { chart.name = e.target.value.trim() || 'Normal'; refreshDiffs(); };
+  $('#edLevel').onchange = (e) => { chart.level = Math.max(1, Math.round(Number(e.target.value)) || 1); refreshDiffs(); };
+  $('#edDiffAdd').onclick = () => {
+    const used = charts.map((c) => c.name);
+    const c = newChart(song, chart);
+    const top = Math.max(-1, ...used.map((n) => DIFF_NAMES.indexOf(n)));
+    c.name = [...DIFF_NAMES.slice(top + 1), ...DIFF_NAMES].find((n) => !used.includes(n)) || 'Diff ' + (charts.length + 1);
+    c.level = Math.max(...charts.map((x) => x.level)) + 1;
+    charts.push(c);
+    selectDiff(charts.length - 1);
   };
+  $('#edDiffDel').onclick = () => {
+    if (charts.length < 2) return toast('난이도가 하나뿐이라 지울 수 없습니다');
+    if (!confirm(`${diffLabel(chart)} 을(를) 지울까요?`)) return;
+    charts.splice(charts.indexOf(chart), 1);
+    saveCharts(song, charts);
+    selectDiff(0);
+  };
+
   $('#edTest').onclick = () => {
     if (playing) toggle();
-    saveChart(song, chart);
-    Game.start(song, { chart, from: Math.max(0, cur - 1000), onExit: () => open(song) });
+    saveCharts(song, charts);
+    const idx = charts.indexOf(chart);
+    Game.start(song, { chart, from: Math.max(0, cur - 1000), onExit: () => open(song, idx) });
   };
 
   function onKey(e) {

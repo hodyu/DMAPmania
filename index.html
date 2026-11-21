@@ -24,6 +24,7 @@
       <div id="preview" class="preview">영상 미리보기</div>
       <h2 id="selTitle">-</h2>
       <p id="selInfo" class="dim">-</p>
+      <div id="diffList" class="seg wrap"></div>
       <button id="startBtn" class="big accent">시작</button>
     </div>
     <div class="right">
@@ -55,26 +56,37 @@
       <b id="edTitle"></b>
       <span class="grow"></span>
       <button id="edSave">저장</button>
-      <button id="edExport">JSON 복사</button>
-      <label class="file">불러오기 <input id="edImport" type="file" accept=".json"></label>
       <button id="edTest" class="accent">테스트 플레이</button>
     </div>
     <div class="edBody">
       <canvas id="edCanvas" width="420" height="560"></canvas>
       <div class="panel">
+        <div class="diffs">
+          <select id="edDiff"></select>
+          <button id="edDiffAdd">추가</button>
+          <button id="edDiffDel">삭제</button>
+        </div>
+        <div class="pair">
+          <label>난이도 이름 <input id="edDiffName" maxlength="20"></label>
+          <label>레벨 <input id="edLevel" type="number" min="1" max="99"></label>
+        </div>
         <div class="tools">
           <button data-tool="note" class="on">노트</button>
           <button data-tool="long">롱노트</button>
           <button data-tool="erase">지우기</button>
         </div>
-        <label>키 수
-          <select id="edKeys"><option>4</option><option>5</option><option>6</option><option>7</option></select>
-        </label>
-        <label>BPM <input id="edBpm" type="number" step="0.01"></label>
-        <label>오프셋 (ms) <input id="edOffset" type="number"></label>
-        <label>비트 스냅
-          <select id="edSnap"><option>1</option><option>2</option><option selected>4</option><option>8</option><option>3</option><option>6</option></select>
-        </label>
+        <div class="pair">
+          <label>키 수
+            <select id="edKeys"><option>4</option><option>5</option><option>6</option><option>7</option></select>
+          </label>
+          <label>비트 스냅
+            <select id="edSnap"><option>1</option><option>2</option><option selected>4</option><option>8</option><option>3</option><option>6</option></select>
+          </label>
+        </div>
+        <div class="pair">
+          <label>BPM <input id="edBpm" type="number" step="0.01"></label>
+          <label>오프셋 (ms) <input id="edOffset" type="number"></label>
+        </div>
         <p class="dim">클릭: 노트 · 드래그(롱노트 도구): 롱노트<br>우클릭: 삭제 · 휠: 이동 · Space: 재생/정지</p>
         <p id="edCount" class="dim"></p>
       </div>
