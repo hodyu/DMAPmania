@@ -67,22 +67,98 @@ const Editor = (() => {
   function seek(t) {
     cur = Math.min(Math.max(0, t), duration());
     seekSong(song, cur);
+    clock = null;
     draw();
   }
 
+  let clock = null, loopId = 0;
   function toggle() {
     playing = !playing;
     $('#edPlay').textContent = playing ? '❚❚' : '▶';
-    if (playing) { seekSong(song, cur); video.play(); tick(); }
+    clock = null;
+    if (playing) { seekSong(song, cur); video.play(); tick(++loopId); }
     else video.pause();
   }
-  function tick() {
-    if (!playing) return;
-    cur = songTime(song);
+  // currentTime 이 띄엄띄엄 갱신돼서 보간
+  function tick(id) {
+    if (!playing || id !== loopId) return;
+    const media = songTime(song), p = performance.now();
+    if (!clock || video.paused || Math.abs(clock.media + (p - clock.p) * video.playbackRate - media) > 80) clock = { media, p };
+    cur = Math.min(clock.media + (p - clock.p) * video.playbackRate, duration());
     if (video.ended || cur >= duration()) toggle();
     draw();
-    requestAnimationFrame(tick);
+    requestAnimationFrame(() => tick(id));
   }
+
+  // timeline
+  const bar = $('#edBar'), barCv = $('#edBarCv'), bctx = barCv.getContext('2d');
+  let hoverX = -1, scrub = null;
+  const barT = (clientX) => {
+    const r = bar.getBoundingClientRect();
+    return Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * duration();
+  };
+  function drawBar() {
+    const dpr = devicePixelRatio || 1, w = bar.clientWidth, h = bar.clientHeight;
+    if (!w) return;
+    if (barCv.width !== Math.round(w * dpr) || barCv.height !== Math.round(h * dpr)) {
+      barCv.width = Math.round(w * dpr); barCv.height = Math.round(h * dpr);
+    }
+    bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    bctx.clearRect(0, 0, w, h);
+    const d = duration() || 1, px = (t) => (t / d) * w;
+    const ty = h / 2 - 3;
+    bctx.fillStyle = '#1f1f1f';
+    bctx.fillRect(0, ty, w, 6);
+    bctx.fillStyle = '#555';
+    bctx.fillRect(0, ty, px(cur), 6);
+    // 노트 위치
+    bctx.fillStyle = 'rgba(255,255,255,0.35)';
+    let lastX = -1;
+    for (const n of chart.notes) {
+      const x = Math.round(px(n.t));
+      if (x === lastX) continue;
+      lastX = x;
+      bctx.fillRect(x, ty - 5, 1, 4);
+    }
+    if (hoverX >= 0) {
+      bctx.fillStyle = 'rgba(255,255,255,0.4)';
+      bctx.fillRect(Math.round(hoverX), 4, 1, h - 8);
+    }
+    const x = px(cur);
+    bctx.fillStyle = '#fff';
+    bctx.fillRect(Math.round(x) - 1, 2, 2, h - 4);
+    bctx.beginPath(); bctx.arc(x, h / 2, 6, 0, Math.PI * 2); bctx.fill();
+  }
+  function hover(e) {
+    const r = bar.getBoundingClientRect();
+    hoverX = Math.min(r.width, Math.max(0, e.clientX - r.left));
+    const hv = $('#edHover');
+    hv.style.left = hoverX + 'px';
+    hv.textContent = fmt(barT(e.clientX));
+  }
+  bar.onpointerdown = (e) => {
+    try { bar.setPointerCapture(e.pointerId); } catch {}
+    scrub = { resume: playing };
+    if (playing) toggle();
+    bar.classList.add('drag');
+    hover(e);
+    seek(barT(e.clientX));
+  };
+  bar.onpointermove = (e) => {
+    hover(e);
+    if (scrub) seek(barT(e.clientX));
+    else drawBar();
+  };
+  const endScrub = () => {
+    if (!scrub) return;
+    bar.classList.remove('drag');
+    if (scrub.resume) toggle();
+    scrub = null;
+  };
+  bar.onpointerup = endScrub;
+  bar.onpointercancel = endScrub;
+  bar.onpointerleave = () => { if (!scrub) { hoverX = -1; drawBar(); } };
+  window.addEventListener('resize', () => chart && drawBar());
 
   function draw() {
     if (!chart) return;
@@ -107,7 +183,7 @@ const Editor = (() => {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, HEAD_Y, cv.width, 3);
     $('#edTime').textContent = `${fmt(cur)} / ${fmt(duration())}`;
-    $('#edSeek').value = duration() ? (cur / duration()) * 1000 : 0;
+    drawBar();
     $('#edCount').textContent = `노트 ${chart.notes.length}개`;
   }
 
@@ -125,7 +201,6 @@ const Editor = (() => {
     if (chart.notes.length < before) toast(`범위를 벗어난 노트 ${before - chart.notes.length}개를 지웠습니다`);
     draw();
   };
-  $('#edSeek').oninput = (e) => seek((e.target.value / 1000) * duration());
   $('#edPlay').onclick = toggle;
   $('#edSave').onclick = () => { saveCharts(song, charts); toast('저장했습니다'); };
 
