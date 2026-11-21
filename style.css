@@ -1,20 +1,19 @@
 * { box-sizing: border-box; }
 body {
-  margin: 0; height: 100vh; overflow: hidden;
-  background: #000; color: #eee;
+  margin: 0; height: 100vh; overflow: hidden; background: #000; color: #eee;
   font-family: "Noto Sans KR", system-ui, sans-serif;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
 }
 button, input, select { font: inherit; color: inherit; accent-color: #fff; }
-button {
-  border: 1px solid #2a2a2a; border-radius: 4px; padding: 10px 16px;
-  background: #1a1a1a; cursor: pointer;
-}
+button, input, select { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 4px; padding: 8px 14px; }
+button { cursor: pointer; }
+input[type=range], input[type=checkbox] { padding: 0; border: 0; background: none; }
+input[type=checkbox] { width: 22px; height: 22px; }
 button:hover { border-color: #555; }
-.accent:hover { background: #ddd; }
-input, select { background: #111; border: 1px solid #2a2a2a; border-radius: 4px; padding: 8px 10px; }
 .accent { background: #fff; color: #000; font-weight: 700; }
-.big { width: 320px; padding: 16px; font-size: 22px; font-weight: 700; }
-.link { background: none; border: 0; color: #888; padding: 0; align-self: flex-start; }
+.accent:hover { background: #ddd; }
+.big { width: min(320px, 86vw); padding: 14px; font-size: 20px; font-weight: 700; }
+.link { background: none; border: 0; padding: 0; color: #888; }
 .dim { color: #888; font-size: 14px; line-height: 1.7; }
 .grow { flex: 1; }
 .hidden { display: none !important; }
@@ -27,175 +26,124 @@ input, select { background: #111; border: 1px solid #2a2a2a; border-radius: 4px;
 
 .screen { display: none; position: fixed; inset: 0; }
 .screen.active { display: flex; }
-.center { flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
-.row { width: min(560px, 92vw); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-label.row > span { display: flex; align-items: center; gap: 8px; }
-.row input[type=checkbox] { width: 22px; height: 22px; accent-color: #fff; }
-.row small { flex: 1; }
-.row.col { flex-direction: column; align-items: stretch; }
-.seg { display: flex; gap: 6px; }
-.seg button.on, .slots button.on { background: #fff; color: #000; }
-.slots { display: flex; gap: 6px; justify-content: center; }
-.slots button { width: 64px; height: 64px; font-size: 20px; font-weight: 800; border: 2px solid var(--c); }
-.slots button.wait { background: #eee; color: #000; }
+.center { flex-direction: column; align-items: center; justify-content: center; gap: 12px; overflow-y: auto; }
 
-#video { position: fixed; z-index: -1; opacity: 0; transition: opacity .4s; }
-body.bg-select #video { inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .45; filter: blur(2px); transform: scale(1.03); }
-body.bg-video #video { inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .3; }
+/* 영상: 곡 선택/플레이 때 배경으로 */
+#video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0; transition: opacity .4s; }
+body.bg-select #video { opacity: .45; }
+body.bg-video #video { opacity: .3; }
 
-#play { align-items: center; justify-content: center; }
-#playCanvas { width: 100%; height: 100%; object-fit: contain; touch-action: none; user-select: none; -webkit-user-select: none; }
-#pauseBtn { position: absolute; left: 16px; bottom: 16px; width: 48px; height: 48px; padding: 0; background: rgba(255,255,255,.12); }
-body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-#edCanvas { touch-action: none; }
-
-/* landscape phone */
-@media (max-height: 500px) {
-  .big { padding: 10px; font-size: 18px; }
-  .center { gap: 8px; overflow-y: auto; justify-content: flex-start; padding: 12px; }
-  #edCanvas { max-height: none; }
+/* 메뉴 */
+#menu { background: radial-gradient(ellipse at 50% 40%, #1b1b1b, #000 70%); }
+.logo { font: 800 84px "Exo 2", sans-serif; letter-spacing: -2px; margin: 0 0 24px; text-shadow: 0 0 40px #fff3; }
+.menu-nav { display: flex; flex-direction: column; gap: 8px; width: min(420px, 86vw); }
+.menu-nav button {
+  display: flex; align-items: center; justify-content: space-between; text-align: left;
+  background: #141414e6; border: 1px solid #262626; border-left: 4px solid #333; border-radius: 0;
+  padding: 18px 24px; font-size: 22px; font-weight: 700; transition: transform .12s;
 }
+.menu-nav button:hover { transform: translateX(8px); border-left-color: #fff; }
+.menu-nav button:first-child { border-left-color: #fff; }
+kbd { font: 13px "Exo 2", sans-serif; color: #777; border: 1px solid #333; border-radius: 3px; padding: 1px 6px; }
 
-/* portrait phone */
+/* 곡 선택 */
+#select { grid-template-columns: 1fr 1.15fr; grid-template-rows: 1fr auto; background: linear-gradient(90deg, #000d, #0005 50%, #000c); }
+#select.active { display: grid; }
+.sel-info { padding: 40px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.sel-info h2 { margin: 0; font-size: 38px; }
+#selArtist { margin: 0 0 6px; color: #bbb; font-size: 18px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-width: 480px; }
+.stats div { background: #0009; border: 1px solid #222; padding: 8px 12px; }
+.stats small { display: block; font-size: 11px; color: #888; }
+.stats b { font: 700 22px "Exo 2", sans-serif; }
+.diff-list { display: flex; flex-direction: column; gap: 4px; max-width: 480px; }
+.diff-row { display: flex; gap: 14px; text-align: left; background: #0009; border-left: 4px solid var(--c); }
+.diff-row.on { background: #fff2; color: #eee; border-color: #555; border-left-color: var(--c); }
+.lv { min-width: 42px; border-radius: 3px; background: var(--c); color: #000; font: 800 16px "Exo 2", sans-serif; text-align: center; }
+.dn { flex: 1; font-weight: 700; }
+.dk { color: #888; }
+.sel-list { display: flex; flex-direction: column; gap: 10px; padding-top: 24px; min-height: 0; }
+#search { margin: 0 24px 0 12%; background: #000b; }
+#songList { list-style: none; margin: 0; padding: 30vh 0; overflow-y: auto; scrollbar-width: none; }
+#songList li {
+  margin: 0 0 6px 12%; padding: 12px 20px; cursor: pointer;
+  background: #101010e0; border: 1px solid #262626; border-left: 4px solid #3a3a3a; transition: margin .18s;
+}
+#songList li:hover { margin-left: 9%; }
+#songList li.sel { margin-left: 0; background: #f5f5f5; color: #000; }
+#songList b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#songList small { color: #999; }
+#songList .sel small { color: #555; }
+#songList em { font: normal 800 11px sans-serif; background: #ffd36b; color: #000; padding: 1px 5px; margin-right: 6px; }
+.pips { display: flex; gap: 4px; margin-top: 6px; }
+.pips i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.sel-foot { grid-column: 1 / -1; display: flex; background: #080808; border-top: 1px solid #222; }
+.sel-foot > * { display: flex; align-items: center; padding: 0 22px; height: 56px; border: 0; border-radius: 0; background: none; color: #bbb; cursor: pointer; }
+.sel-foot input { display: none; }
+#songCount { justify-content: flex-end; color: #666; cursor: default; }
+#startBtn { width: 220px; justify-content: center; background: #fff; color: #000; font-size: 22px; font-weight: 700; }
+
+/* 플레이 */
+#play { align-items: center; justify-content: center; }
+#playCanvas { width: 100%; height: 100%; object-fit: contain; touch-action: none; user-select: none; }
+#pauseBtn { position: absolute; left: 16px; bottom: 16px; width: 48px; height: 48px; padding: 0; background: #fff2; }
+.overlay { position: absolute; inset: 0; background: #000e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 20px; }
+.grade { font: 800 140px/1 "Exo 2", sans-serif; color: #ffd36b; }
+.rscore { font: 800 52px "Exo 2", sans-serif; }
+.counts { display: flex; gap: 8px; margin: 8px 0; }
+.counts span { min-width: 84px; padding: 10px; background: #111; border: 1px solid #222; text-align: center; font: 700 22px "Exo 2", sans-serif; }
+.counts b { display: block; font-size: 12px; color: #888; }
+
+/* 에디터 */
+#editor { flex-direction: column; }
+.bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #0a0a0a; border-bottom: 1px solid #1c1c1c; }
+.edBody { flex: 1; display: flex; gap: 40px; justify-content: center; align-items: center; min-height: 0; }
+#edCanvas { height: 100%; max-height: 560px; touch-action: none; }
+.panel { width: 320px; display: flex; flex-direction: column; gap: 12px; }
+.panel label { display: flex; flex-direction: column; gap: 6px; color: #888; font-size: 14px; }
+.panel input, .panel select { width: 100%; background: #111; }
+.diffs, .tools { display: flex; gap: 6px; }
+.diffs select { flex: 1; }
+.diffs button { flex: none; }
+.tools button { flex: 1; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.on { background: #fff; color: #000; }
+#edPlay { width: 52px; padding: 8px 0; }
+.tbar { position: relative; height: 32px; min-width: 160px; cursor: pointer; touch-action: none; }
+.tbar canvas { width: 100%; height: 100%; display: block; }
+#edHover { position: absolute; bottom: 100%; transform: translateX(-50%); padding: 2px 6px; background: #eee; color: #000; font-size: 12px; pointer-events: none; display: none; }
+.tbar:hover #edHover, .tbar.drag #edHover { display: block; }
+
+/* 설정 */
+#settings { background: radial-gradient(ellipse at 50% 30%, #161616, #000 70%); }
+.row { width: min(560px, 92vw); display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; background: #141414; border: 1px solid #222; }
+.row.col { flex-direction: column; align-items: stretch; }
+.seg, .slots { display: flex; gap: 6px; justify-content: center; }
+.slots button { width: 64px; height: 64px; font-size: 20px; font-weight: 800; border: 2px solid var(--c); }
+.slots .wait { background: #eee; color: #000; }
+
+/* 폰 */
 @media (max-width: 800px) {
+  #select { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  .sel-info { padding: 16px 16px 4px; }
+  .sel-info h2 { font-size: 24px; }
+  .diff-list { flex-direction: row; overflow-x: auto; }
+  .diff-row { flex-shrink: 0; }
+  #search { margin: 0 16px; }
+  #songList { padding: 8px 0 40px; }
+  #songList li, #songList li:hover { margin-left: 16px; }
+  #songList li.sel { margin-left: 0; }
+  .sel-foot > * { padding: 0 12px; font-size: 13px; }
+  #songCount { display: none; }
+  #startBtn { width: 120px; margin-left: auto; }
   .edBody { flex-direction: column; gap: 12px; padding: 12px; overflow-y: auto; }
   #edCanvas { height: 60vh; }
   .panel { width: 100%; }
   .bar { flex-wrap: wrap; }
-  .big { width: min(320px, 86vw); }
-}
-.overlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,.88);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 20px;
-}
-.overlay .grade { font-family: "Exo 2", sans-serif; font-size: 140px; font-weight: 800; color: #ffd36b; line-height: 1; }
-.overlay .rscore { font-family: "Exo 2", sans-serif; font-size: 52px; font-weight: 800; letter-spacing: 2px; }
-.overlay .counts { display: flex; gap: 8px; margin: 8px 0 12px; }
-.overlay .counts span { min-width: 84px; padding: 10px 12px; background: #111; border: 1px solid #222; text-align: center; font-family: "Exo 2", sans-serif; font-size: 22px; font-weight: 700; }
-.overlay .counts b { display: block; font-size: 12px; color: #888; letter-spacing: 1px; }
-.overlay h2 { font-family: "Exo 2", sans-serif; letter-spacing: 3px; }
-.overlay .big { width: 260px; }
-
-#editor { flex-direction: column; }
-.bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #0a0a0a; border-bottom: 1px solid #1c1c1c; }
-.edBody { flex: 1; display: flex; gap: 40px; justify-content: center; align-items: center; min-height: 0; }
-#edCanvas { height: 100%; max-height: 560px; background: #000; }
-.panel { width: 320px; display: flex; flex-direction: column; gap: 12px; }
-.panel label { display: flex; flex-direction: column; gap: 6px; color: #888; font-size: 14px; }
-.tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.tools .on { background: #fff; color: #000; }
-.diffs { display: flex; gap: 6px; }
-.diffs select { flex: 1; min-width: 0; }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pair input, .pair select { width: 100%; }
-.seg.wrap { flex-wrap: wrap; }
-.tbar { position: relative; height: 32px; min-width: 160px; cursor: pointer; touch-action: none; }
-.tbar canvas { display: block; width: 100%; height: 100%; }
-#edHover {
-  position: absolute; bottom: 100%; margin-bottom: 6px; transform: translateX(-50%);
-  padding: 2px 6px; border-radius: 3px; background: #eee; color: #000; font-size: 12px;
-  pointer-events: none; display: none; white-space: nowrap;
-}
-.tbar:hover #edHover, .tbar.drag #edHover { display: block; }
-#edPlay { width: 52px; padding-left: 0; padding-right: 0; }
-
-/* menu */
-#menu { align-items: center; justify-content: center;
-  background: radial-gradient(ellipse at 50% 40%, #1b1b1b 0%, #000 70%); }
-.menu-wrap { display: flex; flex-direction: column; align-items: center; gap: 36px; }
-.logo { font-family: "Exo 2", sans-serif; font-size: 84px; font-weight: 800; letter-spacing: -2px; margin: 0; color: #fff;
-  text-shadow: 0 0 40px rgba(255,255,255,.15); }
-.menu-nav { display: flex; flex-direction: column; gap: 8px; width: min(420px, 86vw); }
-.menu-nav button {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 24px; font-size: 22px; font-weight: 700; text-align: left;
-  background: rgba(20,20,20,.9); border: 1px solid #262626; border-left: 4px solid #333;
-  transition: transform .12s, border-color .12s, background .12s;
-}
-.menu-nav button:hover { transform: translateX(8px); border-left-color: #fff; background: #1c1c1c; }
-.menu-nav button:first-child { border-left-color: #fff; }
-kbd { font-family: "Exo 2", sans-serif; font-size: 13px; color: #777; border: 1px solid #333; border-radius: 3px; padding: 1px 6px; }
-
-/* song select */
-#select {
-  display: none; grid-template-columns: minmax(300px, 1fr) minmax(340px, 1.15fr); grid-template-rows: 1fr auto;
-  background: linear-gradient(90deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.8) 100%);
-}
-#select.active { display: grid; }
-.sel-info { padding: 40px 32px 20px 40px; display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto; }
-.sel-info h2 { margin: 0; font-size: 38px; line-height: 1.2; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
-#selArtist { margin: -6px 0 6px; color: #bbb; font-size: 18px; }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; max-width: 480px; }
-.stats div { background: rgba(0,0,0,.6); border: 1px solid #222; padding: 8px 12px; }
-.stats small { display: block; font-size: 11px; color: #888; letter-spacing: 1px; }
-.stats b { font-family: "Exo 2", sans-serif; font-size: 22px; }
-.diff-list { display: flex; flex-direction: column; gap: 4px; max-width: 480px; margin-top: 8px; }
-.diff-row {
-  display: flex; align-items: center; gap: 14px; width: 100%; padding: 10px 14px; text-align: left;
-  background: rgba(0,0,0,.6); border: 1px solid #222; border-left: 4px solid var(--c);
-  transition: transform .12s, background .12s;
-}
-.diff-row:hover { transform: translateX(4px); }
-.diff-row.on { background: rgba(255,255,255,.1); border-color: #555; border-left-color: var(--c); }
-.diff-row .lv { min-width: 42px; padding: 2px 8px; border-radius: 3px; background: var(--c); color: #000;
-  font-family: "Exo 2", sans-serif; font-weight: 800; text-align: center; }
-.diff-row .dn { flex: 1; font-weight: 700; }
-.diff-row .dk { color: #888; font-family: "Exo 2", sans-serif; }
-
-.sel-list { display: flex; flex-direction: column; gap: 10px; padding: 24px 0 12px; min-height: 0; }
-#search { margin: 0 24px 0 12%; background: rgba(0,0,0,.7); border-color: #333; padding: 10px 14px; }
-#songList { list-style: none; margin: 0; padding: 30vh 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
-  scrollbar-width: none; mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
-#songList::-webkit-scrollbar { display: none; }
-#songList li {
-  position: relative; margin-left: 12%; padding: 12px 24px 12px 20px; cursor: pointer;
-  background: rgba(16,16,16,.88); border: 1px solid #262626; border-right: 0; border-left: 4px solid #3a3a3a;
-  transition: margin-left .18s, background .18s, transform .12s;
-}
-#songList li:hover { margin-left: 9%; }
-#songList li.sel { margin-left: 0; background: rgba(245,245,245,.96); color: #000; border-color: #fff; }
-#songList li b { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#songList li small { display: block; color: #999; font-size: 13px; }
-#songList li.sel small { color: #444; }
-#songList li em { font-style: normal; font-size: 11px; font-weight: 800; color: #000; background: #ffd36b; padding: 1px 5px; border-radius: 2px; margin-right: 6px; vertical-align: 2px; }
-.pips { display: flex; gap: 4px; margin-top: 6px; }
-.pips i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
-
-.sel-foot { grid-column: 1 / -1; display: flex; align-items: stretch; gap: 0; background: rgba(8,8,8,.95); border-top: 1px solid #222; }
-.foot-btn { display: flex; align-items: center; padding: 0 22px; height: 56px; background: none; border: 0; border-right: 1px solid #1c1c1c; border-radius: 0; color: #bbb; font-size: 15px; cursor: pointer; }
-.foot-btn:hover { background: #151515; color: #fff; }
-.foot-btn input { display: none; }
-#songCount { align-self: center; padding: 0 20px; color: #666; font-size: 14px; text-align: right; }
-.play-btn { margin-left: auto; width: 220px; border-radius: 0; border: 0; font-size: 22px; font-family: "Exo 2", "Noto Sans KR", sans-serif; letter-spacing: 1px; }
-
-/* settings */
-#settings { background: radial-gradient(ellipse at 50% 30%, #161616 0%, #000 70%); }
-#settings > h2 { font-family: "Exo 2", "Noto Sans KR", sans-serif; font-size: 32px; margin: 0 0 6px; }
-#settings .row { padding: 12px 18px; background: rgba(20,20,20,.9); border: 1px solid #222; border-left: 4px solid #333; }
-
-@media (max-width: 800px) {
-  #select { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
-  .sel-info { padding: 16px 16px 4px; gap: 8px; }
-  .sel-info h2 { font-size: 24px; }
-  .stats b { font-size: 16px; }
-  .diff-list { flex-direction: row; overflow-x: auto; }
-  .diff-row { width: auto; flex-shrink: 0; }
-  .diff-row .dn { flex: none; }
-  .sel-list { padding-top: 8px; }
-  #search { margin: 0 16px; }
-  #songList { padding: 8px 0 40px; mask-image: none; }
-  #songList li, #songList li:hover { margin-left: 16px; }
-  #songList li.sel { margin-left: 0; }
-  .foot-btn { padding: 0 12px; font-size: 13px; height: 50px; }
-  .play-btn { width: 120px; }
-  #songCount { display: none; }
   .logo { font-size: 52px; }
 }
 @media (max-height: 500px) {
-  .sel-info { padding: 12px 20px; gap: 6px; }
-  .sel-info h2 { font-size: 22px; }
-  .menu-wrap { gap: 14px; }
-  .logo { font-size: 44px; }
+  .sel-info { padding: 12px 20px; }
+  .logo { font-size: 44px; margin: 0; }
   .menu-nav button { padding: 10px 18px; font-size: 18px; }
-  .foot-btn { height: 44px; }
 }

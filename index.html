@@ -11,15 +11,13 @@
   <video id="video" playsinline></video>
   <div id="toast"></div>
 
-  <section id="menu" class="screen">
-    <div class="menu-wrap">
-      <h1 class="logo">DMAPmania</h1>
-      <nav class="menu-nav">
-        <button data-go="play"><span>플레이</span><kbd>P</kbd></button>
-        <button data-go="edit"><span>에디터</span><kbd>E</kbd></button>
-        <button data-go="settings"><span>설정</span><kbd>S</kbd></button>
-      </nav>
-    </div>
+  <section id="menu" class="screen center">
+    <h1 class="logo">DMAPmania</h1>
+    <nav class="menu-nav">
+      <button data-go="play" data-key="KeyP">플레이 <kbd>P</kbd></button>
+      <button data-go="edit" data-key="KeyE">에디터 <kbd>E</kbd></button>
+      <button data-go="settings" data-key="KeyS">설정 <kbd>S</kbd></button>
+    </nav>
   </section>
 
   <section id="select" class="screen">
@@ -34,17 +32,17 @@
       <ul id="songList"></ul>
     </div>
     <footer class="sel-foot">
-      <button class="foot-btn" data-back>뒤로</button>
-      <label class="foot-btn">db.js 불러오기 <input id="dbFiles" type="file" accept=".js" multiple></label>
-      <label class="foot-btn">로컬 .mp4 <input id="localFile" type="file" accept="video/mp4"></label>
+      <button data-back>뒤로</button>
+      <label>db.js 불러오기 <input id="dbFiles" type="file" accept=".js" multiple></label>
+      <label>로컬 .mp4 <input id="localFile" type="file" accept="video/mp4"></label>
       <span id="songCount" class="grow"></span>
-      <button id="startBtn" class="accent play-btn">시작</button>
+      <button id="startBtn">시작</button>
     </footer>
   </section>
 
   <section id="play" class="screen">
     <canvas id="playCanvas" width="1280" height="720"></canvas>
-    <button id="pauseBtn" aria-label="일시정지">❚❚</button>
+    <button id="pauseBtn">❚❚</button>
     <div id="result" class="overlay hidden"></div>
     <div id="pause" class="overlay hidden">
       <h2>일시정지</h2>
@@ -57,8 +55,7 @@
   <section id="editor" class="screen">
     <div class="bar">
       <button class="link" data-back>← 뒤로</button>
-      <b id="edTitle"></b>
-      <span class="grow"></span>
+      <b id="edTitle" class="grow"></b>
       <button id="edSave">저장</button>
       <button id="edTest" class="accent">테스트 플레이</button>
     </div>
@@ -72,7 +69,7 @@
         </div>
         <div class="pair">
           <label>난이도 이름 <input id="edDiffName" maxlength="20"></label>
-          <label>레벨 <input id="edLevel" type="number" min="1" max="99"></label>
+          <label>레벨 <input id="edLevel" type="number" min="1"></label>
         </div>
         <div class="tools">
           <button data-tool="note" class="on">노트</button>
@@ -80,14 +77,8 @@
           <button data-tool="erase">지우기</button>
         </div>
         <div class="pair">
-          <label>키 수
-            <select id="edKeys"><option>4</option><option>5</option><option>6</option><option>7</option></select>
-          </label>
-          <label>비트 스냅
-            <select id="edSnap"><option>1</option><option>2</option><option selected>4</option><option>8</option><option>3</option><option>6</option></select>
-          </label>
-        </div>
-        <div class="pair">
+          <label>키 수 <select id="edKeys"><option>4</option><option>5</option><option>6</option><option>7</option></select></label>
+          <label>비트 스냅 <select id="edSnap"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>6</option><option>8</option></select></label>
           <label>BPM <input id="edBpm" type="number" step="0.01"></label>
           <label>오프셋 (ms) <input id="edOffset" type="number"></label>
         </div>
@@ -104,10 +95,7 @@
 
   <section id="settings" class="screen center">
     <h2>설정</h2>
-    <div class="row">
-      <span>키 모드</span>
-      <div id="keyModes" class="seg"></div>
-    </div>
+    <div class="row"><span>키 모드</span><div id="keyModes" class="seg"></div></div>
     <div class="row col">
       <span>키 배치</span>
       <div id="keySlots" class="slots"></div>
@@ -115,7 +103,7 @@
     </div>
     <label class="row">스크롤 속도 <span><input id="setSpeed" type="range" min="0.3" max="3" step="0.1"> <b id="speedVal"></b></span></label>
     <label class="row">오디오 오프셋 (ms) <input id="setOffset" type="number"></label>
-    <label class="row">배경 영상 표시<input id="setBg" type="checkbox"></label>
+    <label class="row">배경 영상 표시 <input id="setBg" type="checkbox"></label>
     <label class="row">볼륨 <input id="setVolume" type="range" min="0" max="1" step="0.05"></label>
     <button class="big" data-back>저장하고 돌아가기</button>
   </section>

@@ -1,30 +1,28 @@
-const current = () => document.querySelector('.screen.active')?.id;
+const current = () => $('.screen.active')?.id;
 
 document.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => {
-  const go = b.dataset.go;
-  if (go === 'settings') Settings.open();
-  else Select.open(go); // 'play' | 'edit'
+  if (b.dataset.go === 'settings') Settings.open();
+  else Select.open(b.dataset.go);
 }));
 
-document.querySelectorAll('[data-back]').forEach((b) => (b.onclick = () => {
+function goBack() {
   const id = current();
-  if (id === 'select') { Select.hidePreview(); show('menu'); }
+  if (id === 'select') { video.pause(); show('menu'); }
   if (id === 'editor') { Editor.close(); Select.open('edit'); }
   if (id === 'settings') { Settings.save(); show('menu'); }
-}));
+}
+document.querySelectorAll('[data-back]').forEach((b) => (b.onclick = goBack));
 
-// settings screen
 const Settings = {
   mode: 4,
-  waiting: -1,
+  waiting: -1, // 키 입력을 기다리는 칸
 
   open() {
     this.mode = settings.keyCount;
-    $('#setSpeed').value = settings.speed;
+    $('#setSpeed').value = $('#speedVal').textContent = settings.speed;
     $('#setOffset').value = settings.offset;
     $('#setVolume').value = settings.volume;
     $('#setBg').checked = settings.bgVideo;
-    $('#speedVal').textContent = settings.speed;
     this.render();
     show('settings');
   },
@@ -38,10 +36,9 @@ const Settings = {
   capture(e) {
     if (this.waiting < 0) return false;
     e.preventDefault();
+    const b = settings.binds[this.mode], dup = b.indexOf(e.code);
     if (e.code !== 'Escape') {
-      const b = settings.binds[this.mode];
-      const dup = b.indexOf(e.code);
-      if (dup >= 0) b[dup] = b[this.waiting];
+      if (dup >= 0) b[dup] = b[this.waiting]; // 이미 쓰는 키면 자리 바꿈
       b[this.waiting] = e.code;
     }
     this.waiting = -1;
@@ -60,12 +57,10 @@ const Settings = {
 };
 
 $('#keyModes').onclick = (e) => {
-  const k = e.target.dataset.k;
-  if (k) { Settings.mode = Number(k); Settings.waiting = -1; Settings.render(); }
+  if (e.target.dataset.k) { Settings.mode = Number(e.target.dataset.k); Settings.waiting = -1; Settings.render(); }
 };
 $('#keySlots').onclick = (e) => {
-  const i = e.target.dataset.i;
-  if (i !== undefined) { Settings.waiting = Number(i); Settings.render(); }
+  if (e.target.dataset.i) { Settings.waiting = Number(e.target.dataset.i); Settings.render(); }
 };
 $('#resetKeys').onclick = () => {
   settings.binds[Settings.mode] = [...DEFAULT_BINDS[Settings.mode]];
@@ -73,28 +68,25 @@ $('#resetKeys').onclick = () => {
 };
 $('#setSpeed').oninput = (e) => ($('#speedVal').textContent = e.target.value);
 
+const SELECT_KEYS = {
+  ArrowDown: () => Select.move(1),
+  ArrowUp: () => Select.move(-1),
+  ArrowRight: () => Select.moveDiff(1),
+  ArrowLeft: () => Select.moveDiff(-1),
+  Enter: () => Select.start(),
+  Escape: goBack,
+};
 window.addEventListener('keydown', (e) => {
   const id = current();
   if (id === 'settings' && Settings.capture(e)) return;
   if (id === 'play') Game.onKey(e, true);
   if (id === 'editor') Editor.onKey(e);
-  if (id === 'menu') {
-    const go = { KeyP: 'play', KeyE: 'edit', KeyS: 'settings' }[e.code];
-    if (go) document.querySelector(`[data-go="${go}"]`).click();
-  }
-  const typing = e.target.tagName === 'INPUT' && /ArrowLeft|ArrowRight/.test(e.code);
-  if (id === 'select' && !typing) {
-    if (e.key === 'Enter') Select.start();
-    else if (e.code === 'ArrowDown') { e.preventDefault(); Select.move(1); }
-    else if (e.code === 'ArrowUp') { e.preventDefault(); Select.move(-1); }
-    else if (e.code === 'ArrowRight') { e.preventDefault(); Select.moveDiff(1); }
-    else if (e.code === 'ArrowLeft') { e.preventDefault(); Select.moveDiff(-1); }
-    else if (e.code === 'Escape') document.querySelector('#select [data-back]').click();
-  }
+  if (id === 'menu') $(`[data-key="${e.code}"]`)?.click();
+  const action = SELECT_KEYS[e.code];
+  const typing = e.target.tagName === 'INPUT' && /Left|Right/.test(e.code); // 검색창 커서 이동은 그대로
+  if (id === 'select' && action && !typing) { e.preventDefault(); action(); }
 });
-window.addEventListener('keyup', (e) => {
-  if (current() === 'play') Game.onKey(e, false);
-});
+window.addEventListener('keyup', (e) => current() === 'play' && Game.onKey(e, false));
 
 saveSettings();
 show('menu');

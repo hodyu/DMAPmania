@@ -1,6 +1,6 @@
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const Select = {
   songs: [],
+  hits: [],
   current: null,
   charts: [],
   diff: 0,
@@ -11,33 +11,26 @@ const Select = {
     $('#startBtn').textContent = mode === 'play' ? '시작' : '편집하기';
     if (!this.songs.length) this.songs = await loadSongs();
     show('select');
-    this.render();
     if (this.current) this.pick(this.current);
+    else this.render();
   },
 
-  // 초성 검색 지원, 200곡까지만 렌더
+  // 제목/아티스트/초성 검색, 200곡까지만 그림
   render() {
     const q = $('#search').value.trim().toLowerCase();
-    const hits = this.songs.filter((s) => {
-      if (!q) return true;
+    const all = this.songs.filter((s) => {
       const text = (s.title + ' ' + (s.artist || '')).toLowerCase();
       return text.includes(q) || chosung(text).includes(q);
     });
-    this.hits = hits.slice(0, 200);
-    const list = $('#songList');
-    list.innerHTML = '';
-    for (const s of hits.slice(0, 200)) {
-      const li = document.createElement('li');
-      const pips = (s === this.current ? this.charts : loadCharts(s))
-        .map((c) => `<i style="--c:${levelColor(c.level)}"></i>`).join('');
-      li.innerHTML = `<b>${s.isNew ? '<em>NEW</em>' : ''}${esc(s.title)}</b>
+    this.hits = all.slice(0, 200);
+    $('#songList').innerHTML = this.hits.map((s, i) => {
+      const pips = loadCharts(s).map((c) => `<i style="--c:${levelColor(c.level)}"></i>`).join('');
+      return `<li data-i="${i}" class="${s === this.current ? 'sel' : ''}">
+        <b>${s.isNew ? '<em>NEW</em>' : ''}${esc(s.title)}</b>
         <small>${esc(s.artist || '')}${s.end ? ' · ' + fmt(segLength(s)) : ''}</small>
-        <span class="pips">${pips}</span>`;
-      li.classList.toggle('sel', s === this.current);
-      li.onclick = () => this.pick(s);
-      list.appendChild(li);
-    }
-    $('#songCount').textContent = hits.length > 200 ? `${hits.length}곡 중 200곡 표시 · 검색으로 좁혀 보세요` : `${hits.length}곡`;
+        <span class="pips">${pips}</span></li>`;
+    }).join('');
+    $('#songCount').textContent = all.length > 200 ? `${all.length}곡 중 200곡 표시` : `${all.length}곡`;
   },
 
   async pick(song) {
@@ -49,7 +42,7 @@ const Select = {
     this.renderDiffs();
     $('#selTitle').textContent = song.title;
     $('#selArtist').textContent = song.artist || '';
-    $('#songList li.sel')?.scrollIntoView({ block: 'nearest' });
+    $('#songList .sel')?.scrollIntoView({ block: 'nearest' });
     try {
       await loadVideo(song);
       if (this.current !== song) return;
@@ -62,22 +55,18 @@ const Select = {
   },
 
   renderDiffs() {
-    const chart = this.charts[this.diff];
+    const chart = this.charts[this.diff], len = segLength(this.current);
     $('#diffList').innerHTML = this.charts.map((c, i) =>
-      `<button data-d="${i}" class="diff-row${i === this.diff ? ' on' : ''}" style="--c:${levelColor(c.level)}">
-        <span class="lv">${c.level}</span><span class="dn">${esc(c.name)}</span><span class="dk">${c.keys}K</span>
-      </button>`).join('');
-    const len = segLength(this.current);
+      `<button data-d="${i}" class="diff-row ${i === this.diff ? 'on' : ''}" style="--c:${levelColor(c.level)}">
+        <span class="lv">${c.level}</span><span class="dn">${esc(c.name)}</span><span class="dk">${c.keys}K</span></button>`).join('');
     const stat = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
     $('#selStats').innerHTML = stat('길이', len ? fmt(len) : '-') + stat('BPM', chart.bpm) +
       stat('노트', chart.notes.length || '자동') + stat('키', chart.keys + 'K');
   },
 
   move(d) {
-    const h = this.hits || [];
-    if (!h.length) return;
-    const i = h.indexOf(this.current);
-    this.pick(h[(i < 0 ? 0 : i + d + h.length) % h.length]);
+    const h = this.hits, i = h.indexOf(this.current);
+    if (h.length) this.pick(h[i < 0 ? 0 : (i + d + h.length) % h.length]);
   },
   moveDiff(d) {
     if (!this.current) return;
@@ -85,24 +74,22 @@ const Select = {
     this.renderDiffs();
   },
 
-  hidePreview() {
-    video.pause();
-  },
-
   start() {
     if (!this.current) return toast('곡을 선택하세요');
-    video.play().catch(() => {});
-    this.hidePreview();
+    video.play().catch(() => {}); // iOS: 탭 안에서 한 번 재생해야 소리가 남
+    video.pause();
     if (this.mode === 'play') Game.start(this.current, { chart: this.charts[this.diff] });
     else Editor.open(this.current, this.diff);
   },
 };
 
+$('#songList').onclick = (e) => {
+  const li = e.target.closest('li');
+  if (li) Select.pick(Select.hits[li.dataset.i]);
+};
 $('#diffList').onclick = (e) => {
-  const d = e.target.closest('[data-d]')?.dataset.d;
-  if (d === undefined) return;
-  Select.diff = Number(d);
-  Select.renderDiffs();
+  const b = e.target.closest('[data-d]');
+  if (b) { Select.diff = Number(b.dataset.d); Select.renderDiffs(); }
 };
 $('#search').oninput = () => Select.render();
 $('#startBtn').onclick = () => Select.start();
@@ -111,7 +98,7 @@ $('#dbFiles').onchange = async (e) => {
   const { added, saved } = await importDbFiles(e.target.files);
   Select.songs = mergeSongs(Select.songs, saved);
   Select.render();
-  toast(added ? `db.js에서 ${added}곡을 읽었습니다` : '곡을 찾지 못했습니다. db.js 형식인지 확인하세요');
+  toast(added ? `db.js에서 ${added}곡을 읽었습니다` : '곡을 찾지 못했습니다');
   e.target.value = '';
 };
 $('#localFile').onchange = (e) => {

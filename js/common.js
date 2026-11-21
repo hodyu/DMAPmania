@@ -15,13 +15,13 @@ function toast(msg) {
   toast.timer = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
+// localStorage 가 막혀 있어도 동작하게
 const store = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  get(k, fallback) { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 
-// settings
-// e.code 기준 (한글 IME 대응)
+// settings (키는 e.code 기준이라 한글 입력 상태에서도 동작)
 const DEFAULT_BINDS = {
   4: ['KeyD', 'KeyF', 'KeyJ', 'KeyK'],
   5: ['KeyD', 'KeyF', 'Space', 'KeyJ', 'KeyK'],
@@ -30,56 +30,37 @@ const DEFAULT_BINDS = {
 };
 const settings = Object.assign(
   { speed: 1, offset: 0, volume: 0.8, bgVideo: true, keyCount: 4, binds: structuredClone(DEFAULT_BINDS) },
-  JSON.parse(store.get('settings') || '{}')
+  store.get('settings', {})
 );
 function saveSettings() {
-  store.set('settings', JSON.stringify(settings));
+  store.set('settings', settings);
   video.volume = settings.volume;
 }
-const keyLabel = (code) => code.replace(/^Key|^Digit/, '').replace('Semicolon', ';').replace('Space', '␣');
+const keyLabel = (code) => code.replace(/^Key|^Digit/, '').replace('Space', '␣');
 
 function laneColor(i, k) {
   if (k % 2 && i === (k - 1) / 2) return '#ffd36b';
   return Math.min(i, k - 1 - i) % 2 ? '#5ec8ff' : '#eeeeee';
 }
 
-// chart
-// 곡마다 난이도별 채보 배열: [{ name, level, keys, bpm, offset, notes }]
-// notes: { t: ms, l: lane, d: hold ms }
-const DIFF_NAMES = ['Easy', 'Normal', 'Hard', 'Insane', 'Expert'];
+// chart: 곡마다 난이도 배열 [{ name, level, keys, bpm, offset, notes: [{ t: ms, l: lane, d: hold ms }] }]
+const DIFF_NAMES = ['Normal', 'Hard', 'Insane', 'Expert'];
+const LV_COLORS = ['#6ec6ff', '#6ee7a8', '#e8e36a', '#ffb35c', '#ff6b6b', '#c78bff'];
 
 function newChart(song, base = {}) {
-  return {
-    name: 'Normal', level: 1,
-    keys: base.keys || settings.keyCount,
-    bpm: base.bpm || song.bpm || 120,
-    offset: base.offset ?? song.offset ?? 0,
-    notes: [],
-  };
+  return { name: 'Normal', level: 1, keys: base.keys || settings.keyCount, bpm: base.bpm || song.bpm || 120, offset: base.offset || 0, notes: [] };
 }
-function loadCharts(song) {
-  try {
-    const saved = JSON.parse(store.get('charts:' + song.id));
-    if (Array.isArray(saved) && saved.length) return saved;
-  } catch {}
-  const old = store.get('chart:' + song.id); // 난이도 생기기 전 저장 형식
-  if (old) {
-    try { return [Object.assign(newChart(song), JSON.parse(old))]; } catch {}
-  }
-  return [newChart(song)];
-}
+const loadCharts = (song) => store.get('charts:' + song.id, null) || [newChart(song)];
 function saveCharts(song, charts) {
   charts.forEach((c) => c.notes.sort((a, b) => a.t - b.t));
-  store.set('charts:' + song.id, JSON.stringify(charts));
+  store.set('charts:' + song.id, charts);
 }
 const diffLabel = (c) => `${c.name} Lv.${c.level}`;
-const LV_COLORS = ['#6ec6ff', '#6ee7a8', '#e8e36a', '#ffb35c', '#ff6b6b', '#c78bff', '#9aa0ff'];
-const levelColor = (lv) => LV_COLORS[Math.min(LV_COLORS.length - 1, Math.floor((Math.max(1, lv) - 1) / 2))];
+const levelColor = (lv) => LV_COLORS[Math.min(LV_COLORS.length - 1, Math.floor((lv - 1) / 2))];
 
-// 채보 없으면 대충 자동 생성
+// 채보가 비어 있으면 박자에 맞춰 대충 생성
 function autoChart(chart, durationMs) {
-  const beat = 60000 / chart.bpm, k = chart.keys;
-  const notes = [];
+  const beat = 60000 / chart.bpm, k = chart.keys, notes = [];
   let lane = 0;
   for (let t = chart.offset + beat * 4; t < durationMs - beat; t += beat) {
     lane = (lane + 1 + Math.floor(Math.random() * (k - 1))) % k;
@@ -91,40 +72,33 @@ function autoChart(chart, durationMs) {
 
 // DMAP 곡은 긴 영상의 start~end 구간
 const segStart = (song) => (song.start || 0) * 1000;
-const segLength = (song) => (song.end ? (song.end - (song.start || 0)) * 1000 : (video.duration || 0) * 1000);
+const segLength = (song) => (song.end ? song.end * 1000 - segStart(song) : (video.duration || 0) * 1000);
 const seekSong = (song, ms) => (video.currentTime = (segStart(song) + ms) / 1000);
 const songTime = (song) => video.currentTime * 1000 - segStart(song);
 
-// video
+// .m3u8 은 hls.js 로 재생 (사파리는 기본 지원)
 const HLS_JS = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.20/hls.min.js';
 let hls = null;
-function loadScript(src) {
-  return new Promise((ok, fail) => {
-    if (document.querySelector(`script[src="${src}"]`)) return ok();
-    const s = document.createElement('script');
-    s.src = src; s.onload = ok; s.onerror = fail;
-    document.head.appendChild(s);
-  });
-}
 function loadVideo(song) {
-  const url = song.url;
-  return new Promise(async (resolve, reject) => {
-    if (video.dataset.src === url && video.readyState >= 1) return resolve();
-    const fail = () => reject(new Error('영상을 불러올 수 없습니다: ' + song.title));
-    video.dataset.src = url;
+  return new Promise((resolve, reject) => {
+    if (video.dataset.src === song.url && video.readyState >= 1) return resolve();
+    const fail = () => { video.dataset.src = ''; reject(new Error('영상을 불러올 수 없습니다: ' + song.title)); };
+    video.dataset.src = song.url;
     if (hls) { hls.destroy(); hls = null; }
-    video.onloadedmetadata = () => resolve();
+    video.onloadedmetadata = resolve;
     video.onerror = fail;
-    if (/\.m3u8/.test(url) && !video.canPlayType('application/vnd.apple.mpegurl')) {
-      try { await loadScript(HLS_JS); } catch { return fail(); }
-      if (!window.Hls || !Hls.isSupported()) return fail();
+    if (!song.url.includes('.m3u8') || video.canPlayType('application/vnd.apple.mpegurl')) return (video.src = song.url);
+    const attach = () => {
+      if (!Hls.isSupported()) return fail();
       hls = new Hls();
-      hls.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) { video.dataset.src = ''; fail(); } });
-      hls.loadSource(url);
+      hls.on(Hls.Events.ERROR, (_, data) => data.fatal && fail());
+      hls.loadSource(song.url);
       hls.attachMedia(video);
-    } else {
-      video.src = url;
-    }
+    };
+    if (window.Hls) return attach();
+    const script = document.createElement('script');
+    script.src = HLS_JS; script.onload = attach; script.onerror = fail;
+    document.head.appendChild(script);
   });
 }
 
@@ -132,3 +106,4 @@ const fmt = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
