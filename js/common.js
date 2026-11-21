@@ -107,3 +107,65 @@ const fmt = (ms) => {
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+// 별점: osu!mania 난이도 계산(ppy/osu ManiaDifficultyCalculator + Strain 스킬)을 옮긴 것
+// 노트마다 "레인별 부담(individual)" + "전체 부담(overall)"을 쌓고,
+// 400ms 구간마다 최고값을 모아 큰 순서로 0.9 씩 가중합 → 0.018 배
+const STAR_SCALING_FACTOR = 0.018;
+const INDIVIDUAL_DECAY_BASE = 0.125;
+const OVERALL_DECAY_BASE = 0.3;
+const RELEASE_THRESHOLD = 30;
+const SECTION_LENGTH = 400;
+const DECAY_WEIGHT = 0.9;
+
+function starRating(notes, keys) {
+  if (notes.length < 2) return 0;
+  const sorted = [...notes].sort((a, b) => Math.round(a.t) - Math.round(b.t));
+  const applyDecay = (value, deltaTime, decayBase) => value * Math.pow(decayBase, deltaTime / 1000);
+  const bigger = (a, b) => a - 1 > b; // Precision.DefinitelyBigger(a, b, 1)
+  const startTimes = Array(keys).fill(0), endTimes = Array(keys).fill(0), individualStrains = Array(keys).fill(0);
+  let individualStrain = 0, overallStrain = 1, peaks = [], sectionPeak = 0, sectionEnd = 0;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const note = sorted[i], prevStart = sorted[i - 1].t;
+    const startTime = note.t, endTime = note.t + (note.d || 0), column = note.l, deltaTime = startTime - prevStart;
+
+    // 400ms 구간이 바뀌면 지난 구간의 최고값을 저장하고, 새 구간은 감쇠된 값부터 시작
+    if (i === 1) sectionEnd = Math.ceil(startTime / SECTION_LENGTH) * SECTION_LENGTH;
+    while (startTime > sectionEnd) {
+      peaks.push(sectionPeak);
+      const offset = sectionEnd - prevStart;
+      sectionPeak = applyDecay(individualStrain, offset, INDIVIDUAL_DECAY_BASE) + applyDecay(overallStrain, offset, OVERALL_DECAY_BASE);
+      sectionEnd += SECTION_LENGTH;
+    }
+
+    let isOverlapping = false, closestEndTime = Math.abs(endTime - startTime), holdFactor = 1, holdAddition = 0;
+    for (let k = 0; k < keys; k++) {
+      // 다른 롱노트 끝이 이 노트 몸통과 겹침
+      isOverlapping ||= bigger(endTimes[k], startTime) && bigger(endTime, endTimes[k]) && bigger(startTime, startTimes[k]);
+      // 다른 레인을 누르고 있는 중이면 전부 조금 어려워짐
+      if (bigger(endTimes[k], endTime) && bigger(startTime, startTimes[k])) holdFactor = 1.25;
+      closestEndTime = Math.min(closestEndTime, Math.abs(endTime - endTimes[k]));
+    }
+    // 겹친 롱노트를 따로 떼야 하면 가산 (비슷한 때 같이 떼면 쉬움)
+    if (isOverlapping) holdAddition = 1 / (1 + Math.exp(0.27 * (RELEASE_THRESHOLD - closestEndTime)));
+
+    individualStrains[column] = applyDecay(individualStrains[column], startTime - startTimes[column], INDIVIDUAL_DECAY_BASE) + 2 * holdFactor;
+    // 동시치기는 그중 가장 어려운 레인 값을 씀
+    individualStrain = deltaTime <= 1 ? Math.max(individualStrain, individualStrains[column]) : individualStrains[column];
+    overallStrain = applyDecay(overallStrain, deltaTime, OVERALL_DECAY_BASE) + (1 + holdAddition) * holdFactor;
+
+    startTimes[column] = startTime;
+    endTimes[column] = endTime;
+    sectionPeak = Math.max(sectionPeak, individualStrain + overallStrain);
+  }
+  peaks.push(sectionPeak);
+
+  let difficulty = 0, weight = 1;
+  for (const strain of peaks.filter((p) => p > 0).sort((a, b) => b - a)) {
+    difficulty += strain * weight;
+    weight *= DECAY_WEIGHT;
+  }
+  return difficulty * STAR_SCALING_FACTOR;
+}
+const starText = (chart) => (chart.notes.length ? '★' + starRating(chart.notes, chart.keys).toFixed(2) : '★ -');

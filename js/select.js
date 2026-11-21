@@ -58,10 +58,10 @@ const Select = {
     const chart = this.charts[this.diff], len = segLength(this.current);
     $('#diffList').innerHTML = this.charts.map((c, i) =>
       `<button data-d="${i}" class="diff-row ${i === this.diff ? 'on' : ''}" style="--c:${levelColor(c.level)}">
-        <span class="lv">${c.level}</span><span class="dn">${esc(c.name)}</span><span class="dk">${c.keys}K</span></button>`).join('');
+        <span class="lv">${c.level}</span><span class="dn">${esc(c.name)}</span><span class="dk">${c.keys}K</span><span class="sr">${starText(c)}</span></button>`).join('');
     const stat = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
     $('#selStats').innerHTML = stat('길이', len ? fmt(len) : '-') + stat('BPM', chart.bpm) +
-      stat('노트', chart.notes.length || '자동') + stat('키', chart.keys + 'K');
+      stat('노트', chart.notes.length || '자동') + stat('별점', starText(chart).slice(1));
   },
 
   move(d) {

@@ -61,7 +61,9 @@ kbd { font: 13px "Exo 2", sans-serif; color: #777; border: 1px solid #333; borde
 .diff-row.on { background: #fff2; color: #eee; border-color: #555; border-left-color: var(--c); }
 .lv { min-width: 42px; border-radius: 3px; background: var(--c); color: #000; font: 800 16px "Exo 2", sans-serif; text-align: center; }
 .dn { flex: 1; font-weight: 700; }
-.dk { color: #888; }
+.dk, .sr { color: #888; }
+.sr { min-width: 56px; text-align: right; font-family: "Exo 2", sans-serif; }
+.diff-row.on .sr { color: #ffd36b; }
 .sel-list { display: flex; flex-direction: column; gap: 10px; padding-top: 24px; min-height: 0; }
 #search { margin: 0 24px 0 12%; background: #000b; }
 #songList { list-style: none; margin: 0; padding: 30vh 0; overflow-y: auto; scrollbar-width: none; }
@@ -103,7 +105,7 @@ kbd { font: 13px "Exo 2", sans-serif; color: #777; border: 1px solid #333; borde
 .panel label { display: flex; flex-direction: column; gap: 6px; color: #888; font-size: 14px; }
 .panel input, .panel select { width: 100%; background: #111; }
 .diffs, .tools { display: flex; gap: 6px; }
-.diffs select { flex: 1; }
+.diffs select, .diffs input { flex: 1; min-width: 0; }
 .diffs button { flex: none; }
 .tools button { flex: 1; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

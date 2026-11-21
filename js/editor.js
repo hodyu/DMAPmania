@@ -2,7 +2,7 @@ const Editor = (() => {
   const cv = $('#edCanvas');
   const ctx = cv.getContext('2d');
   const LANE_X = 10, STAGE_W = 400, HEAD_Y = 440, ZOOM = 0.3; // px / ms
-  let song, charts, chart, cur = 0, tool = 'note', drag = null, press = null, playing = false, clock = null, loopId = 0;
+  let song, charts, chart, stars = 0, cur = 0, tool = 'note', drag = null, press = null, playing = false, clock = null, loopId = 0;
 
   function open(s, idx = 0) {
     if (song?.id !== s.id) cur = 0;
@@ -41,6 +41,7 @@ const Editor = (() => {
     if (e.button === 2 || tool === 'erase') {
       const n = noteAt(p);
       chart.notes = chart.notes.filter((x) => x !== n);
+      rate();
     } else if (tool === 'long') {
       const t = snap(p.t);
       if (!noteAt({ l: p.l, t })) drag = { l: p.l, t, d: 0 };
@@ -62,7 +63,7 @@ const Editor = (() => {
       else if (press && !press.moved && !noteAt(press)) chart.notes.push({ t: press.t, l: press.l, d: 0 });
     }
     drag = press = null;
-    draw();
+    rate();
   };
   cv.oncontextmenu = (e) => e.preventDefault();
   cv.onwheel = (e) => {
@@ -119,7 +120,7 @@ const Editor = (() => {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, HEAD_Y, cv.width, 3);
     $('#edTime').textContent = `${fmt(cur)} / ${fmt(duration())}`;
-    $('#edCount').textContent = `노트 ${chart.notes.length}개`;
+    $('#edCount').textContent = `노트 ${chart.notes.length}개 · ★${stars.toFixed(2)}`;
     drawBar();
   }
 
@@ -169,6 +170,12 @@ const Editor = (() => {
   };
   window.addEventListener('resize', () => chart && drawBar());
 
+  // 별점은 노트가 바뀔 때만 다시 계산
+  function rate() {
+    stars = starRating(chart.notes, chart.keys);
+    draw();
+  }
+
   // 난이도
   function selectDiff(i) {
     chart = charts[i];
@@ -179,7 +186,7 @@ const Editor = (() => {
     $('#edBpm').value = chart.bpm;
     $('#edOffset').value = chart.offset;
     $('#edKeys').value = chart.keys;
-    draw();
+    rate();
   }
   const refreshDiffs = () => selectDiff(charts.indexOf(chart));
   $('#edDiff').onchange = (e) => selectDiff(Number(e.target.value));
@@ -192,6 +199,7 @@ const Editor = (() => {
     charts.push(c);
     selectDiff(charts.length - 1);
   };
+  $('#edAutoLevel').onclick = () => { chart.level = Math.max(1, Math.round(stars)); refreshDiffs(); };
   $('#edDiffDel').onclick = () => {
     if (charts.length < 2) return toast('난이도가 하나뿐이라 지울 수 없습니다');
     if (!confirm(`${diffLabel(chart)} 을(를) 지울까요?`)) return;
@@ -212,7 +220,7 @@ const Editor = (() => {
     const before = chart.notes.length;
     chart.notes = chart.notes.filter((n) => n.l < chart.keys);
     if (chart.notes.length < before) toast(`범위를 벗어난 노트 ${before - chart.notes.length}개를 지웠습니다`);
-    draw();
+    rate();
   };
   $('#edPlay').onclick = toggle;
   $('#edSave').onclick = () => { saveCharts(song, charts); toast('저장했습니다'); };

@@ -16,7 +16,7 @@ const Game = (() => {
     song = s; opts = o;
     const run = ++runId; // 이전 루프는 runId 가 달라져서 멈춤
     const chart = o.chart || loadCharts(s)[0], from = o.from || 0;
-    diffName = diffLabel(chart);
+    diffName = diffLabel(chart) + " " + starText(chart);
     keys = chart.keys;
     binds = settings.binds[keys];
     COL = touchMode ? Math.min(150, Math.floor(1100 / keys)) : 76;
