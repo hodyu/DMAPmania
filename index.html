@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DMAPmania</title>
-  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;800&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -35,7 +34,6 @@
     </div>
     <footer class="sel-foot">
       <button data-back>뒤로</button>
-      <label>로컬 .mp4 <input id="localFile" type="file" accept="video/mp4"></label>
       <span id="songCount" class="grow"></span>
       <button id="startBtn">시작</button>
     </footer>
@@ -103,7 +101,7 @@
       <button id="resetKeys" class="link">기본값으로</button>
     </div>
     <label class="row">스크롤 속도 <span><input id="setSpeed" type="range" min="0.3" max="3" step="0.1"> <b id="speedVal"></b></span></label>
-    <label class="row">오디오 오프셋 (ms) <input id="setOffset" type="number"></label>
+    <label class="row"><span>오디오 오프셋 (ms) <small class="dim">늦게 치게 되면 +, 빨리 치게 되면 −</small></span><input id="setOffset" type="number" step="5"></label>
     <label class="row">배경 영상 표시 <input id="setBg" type="checkbox"></label>
     <div class="row"><span>곡 DB <small id="dbCount" class="dim"></small></span><label class="file-btn">db.js 불러오기 <input id="dbFiles" type="file" accept=".js" multiple></label></div>
     <label class="row">볼륨 <input id="setVolume" type="range" min="0" max="1" step="0.05"></label>

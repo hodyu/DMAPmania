@@ -37,7 +37,7 @@ const Game = (() => {
       holds = Array(keys).fill(null);
       pressed = Array(keys).fill(false);
       flash = Array(keys).fill(0);
-      stats = { sum: 0, combo: 0, maxCombo: 0, count: [0, 0, 0, 0, 0, 0] };
+      stats = { sum: 0, combo: 0, maxCombo: 0, count: [0, 0, 0, 0, 0, 0], errSum: 0, errCount: 0 };
       errors = []; hp = 1; last = null;
       video.pause();
       seekSong(s, from);
@@ -65,6 +65,8 @@ const Game = (() => {
     stats.sum += J[i][2];
     stats.maxCombo = Math.max(stats.maxCombo, ++stats.combo);
     hp = Math.min(1, hp + 0.02);
+    stats.errSum += err;
+    stats.errCount++;
     errors.push({ err, at: last.at, color: J[i][3] });
     if (errors.length > 40) errors.shift();
   }
@@ -97,7 +99,8 @@ const Game = (() => {
         if (holds[l] && t >= holds[l].t + holds[l].d) holds[l] = null;
       }
       draw(t);
-      if (t > endTime || video.ended) return finish();
+      if (hp <= 0 && !opts.onExit) return finish(true); // 체력 0 = 실패 (에디터 테스트는 제외)
+      if (t > endTime || video.ended) return finish(false);
     }
     requestAnimationFrame(() => loop(run));
   }
@@ -129,7 +132,7 @@ const Game = (() => {
 
     // 레인: 누른 빛, 노트, 키
     ctx.textAlign = 'center';
-    ctx.font = '700 18px "Exo 2", sans-serif';
+    ctx.font = '700 18px sans-serif';
     ctx.lineWidth = 2;
     for (let l = 0; l < keys; l++) {
       const x = left + l * COL, c = colors[l], lit = pressed[l] || p - flash[l] < 80;
@@ -156,7 +159,7 @@ const Game = (() => {
 
     // 콤보, 판정
     ctx.fillStyle = '#ffffff';
-    ctx.font = '800 54px "Exo 2", sans-serif';
+    ctx.font = '800 54px sans-serif';
     if (stats.combo > 0) ctx.fillText(stats.combo, cx, 250);
     if (last && p - last.at < 600) {
       const scale = 1.3 - 0.3 * Math.min(1, (p - last.at) / 80);
@@ -165,7 +168,7 @@ const Game = (() => {
       ctx.scale(scale, scale);
       ctx.globalAlpha = 1 - Math.max(0, (p - last.at - 400) / 200);
       ctx.fillStyle = last.i === 5 ? '#ff4d4d' : J[last.i][3];
-      ctx.font = '800 40px "Exo 2", sans-serif';
+      ctx.font = '800 40px sans-serif';
       ctx.fillText(RESULT_NAMES[last.i], 0, 0);
       ctx.restore();
     }
@@ -191,18 +194,18 @@ const Game = (() => {
     // 진행도, 점수, 정확도
     ctx.fillRect(0, 0, W * Math.max(0, Math.min(1, t / endTime)), 3);
     ctx.textAlign = 'right';
-    ctx.font = '800 44px "Exo 2", sans-serif';
+    ctx.font = '800 44px sans-serif';
     ctx.fillText(String(score()).padStart(7, '0'), W - 28, 58);
-    ctx.font = '600 24px "Exo 2", sans-serif';
+    ctx.font = '600 24px sans-serif';
     ctx.fillText(acc().toFixed(2) + '%', W - 28, 92);
 
     // 곡 정보
     ctx.textAlign = 'left';
-    ctx.font = '700 18px "Noto Sans KR", sans-serif';
+    ctx.font = '700 18px sans-serif';
     ctx.fillText(song.title, 24, 40);
-    ctx.font = '13px "Noto Sans KR", sans-serif';
+    ctx.font = '13px sans-serif';
     ctx.fillStyle = '#888888';
-    ctx.fillText(`${diffName} · ${keys}K · 속도 ${settings.speed}${touchMode ? '' : ' · Esc 일시정지'}`, 24, 62);
+    ctx.fillText(`${diffName} · ${keys}K · 속도 ${settings.speed} · 오프셋 ${settings.offset}ms${touchMode ? '' : ' · Esc 일시정지 · -/= 오프셋'}`, 24, 62);
   }
 
   const judged = () => stats.count.reduce((a, b) => a + b, 0);
@@ -222,18 +225,25 @@ const Game = (() => {
     else startAt = performance.now() + 1000;
   }
 
-  function finish() {
+  function finish(failed) {
     runId++;
     video.pause();
     const a = acc();
-    const grade = a >= 100 ? 'SS' : a >= 95 ? 'S' : a >= 90 ? 'A' : a >= 80 ? 'B' : a >= 70 ? 'C' : 'D';
-    if (!opts.onExit) saveScore(song, chart, { score: score(), acc: a, combo: stats.maxCombo, grade, at: Date.now() }); // 에디터 테스트는 기록 안 함
-    $('#result').innerHTML = `<div class="grade">${grade}</div>
+    const grade = failed ? 'F' : a >= 100 ? 'SS' : a >= 95 ? 'S' : a >= 90 ? 'A' : a >= 80 ? 'B' : a >= 70 ? 'C' : 'D';
+    // 실패했거나 에디터 테스트면 기록 안 함
+    if (!failed && !opts.onExit) saveScore(song, chart, { score: score(), acc: a, combo: stats.maxCombo, grade, at: Date.now() });
+    // 평균 오차: +면 늦게 친 것 → 오프셋을 그만큼 올리면 맞음
+    const avgErr = stats.errCount ? Math.round(stats.errSum / stats.errCount) : 0;
+    const offsetHint = stats.errCount >= 10 && Math.abs(avgErr) >= 3
+      ? `<div class="dim">평균 ${avgErr > 0 ? '+' + avgErr + 'ms 늦게' : avgErr + 'ms 빠르게'} 쳤어요 <button id="fixOffset">오프셋 ${settings.offset} → ${settings.offset + avgErr}ms</button></div>` : '';
+    $('#result').innerHTML = `${failed ? '<h2 class="failed">실패</h2>' : ''}<div class="grade">${grade}</div>
       <div class="rscore">${score().toLocaleString()}</div>
       <div>정확도 ${a.toFixed(2)}% · 최대 콤보 ${stats.maxCombo}x</div>
       <div class="counts">${stats.count.map((c, i) => `<span><b>${RESULT_NAMES[i]}</b>${c}</span>`).join('')}</div>
+      ${offsetHint}
       <div><button id="retry">다시 하기</button> <button id="back" class="accent">돌아가기</button></div>`;
     $('#result').classList.remove('hidden');
+    if (offsetHint) $('#fixOffset').onclick = () => { changeOffset(avgErr); $('#fixOffset').disabled = true; };
     $('#retry').onclick = () => start(song, opts);
     $('#back').onclick = exit;
   }
@@ -282,9 +292,18 @@ const Game = (() => {
     if (lanes) release(l);
   };
 
+  // 오프셋 직접 조절: 플레이 중 - / = 키 (5ms씩), 결과 화면 버튼
+  function changeOffset(ms) {
+    settings.offset += ms;
+    saveSettings();
+    toast(`오프셋 ${settings.offset}ms`);
+  }
+
   function onKey(e, down) {
     if (!lanes || !$('#result').classList.contains('hidden')) return;
     if (down && e.code === 'Escape') return paused ? resume() : pause();
+    if (down && e.code === 'Minus') return changeOffset(-5);
+    if (down && e.code === 'Equal') return changeOffset(5);
     const l = binds.indexOf(e.code);
     if (paused || l < 0 || e.repeat) return;
     e.preventDefault();

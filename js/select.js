@@ -112,10 +112,3 @@ $('#songList').onclick = (e) => {
 };
 $('#search').oninput = () => Select.render();
 $('#startBtn').onclick = () => Select.start();
-$('#localFile').onchange = (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const song = { id: 'local:' + f.name, title: f.name.replace(/\.mp4$/i, ''), artist: '로컬 파일', bpm: 120, url: URL.createObjectURL(f) };
-  Select.songs.push(song);
-  Select.pick(song);
-};

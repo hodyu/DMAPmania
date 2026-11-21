@@ -98,29 +98,14 @@ const segLength = (song) => (song.end ? song.end * 1000 - segStart(song) : (vide
 const seekSong = (song, ms) => (video.currentTime = (segStart(song) + ms) / 1000);
 const songTime = (song) => video.currentTime * 1000 - segStart(song);
 
-// .m3u8 은 hls.js 로 재생 (사파리는 기본 지원)
-const HLS_JS = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.20/hls.min.js';
-let hls = null;
+// DMAP 스트림(.m3u8)은 브라우저 기본 재생에 맡김
 function loadVideo(song) {
   return new Promise((resolve, reject) => {
     if (video.dataset.src === song.url && video.readyState >= 1) return resolve();
-    const fail = () => { video.dataset.src = ''; reject(new Error('영상을 불러올 수 없습니다: ' + song.title)); };
     video.dataset.src = song.url;
-    if (hls) { hls.destroy(); hls = null; }
     video.onloadedmetadata = resolve;
-    video.onerror = fail;
-    if (!song.url.includes('.m3u8') || video.canPlayType('application/vnd.apple.mpegurl')) return (video.src = song.url);
-    const attach = () => {
-      if (!Hls.isSupported()) return fail();
-      hls = new Hls();
-      hls.on(Hls.Events.ERROR, (_, data) => data.fatal && fail());
-      hls.loadSource(song.url);
-      hls.attachMedia(video);
-    };
-    if (window.Hls) return attach();
-    const script = document.createElement('script');
-    script.src = HLS_JS; script.onload = attach; script.onerror = fail;
-    document.head.appendChild(script);
+    video.onerror = () => { video.dataset.src = ''; reject(new Error('영상을 불러올 수 없습니다: ' + song.title)); };
+    video.src = song.url;
   });
 }
 
