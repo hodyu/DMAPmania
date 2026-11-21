@@ -182,9 +182,9 @@ const Game = (() => {
       const x = left + i * COL, c = colors[i];
       const lit = pressed[i] || p - flash[i] < 80;
       ctx.beginPath(); ctx.roundRect(x + 6, JUDGE_Y + 12, COL - 12, 56, 8);
-      ctx.fillStyle = lit ? c : '#16112b'; ctx.fill();
+      ctx.fillStyle = lit ? c : '#111111'; ctx.fill();
       ctx.strokeStyle = c; ctx.stroke();
-      ctx.fillStyle = lit ? '#0b0816' : c;
+      ctx.fillStyle = lit ? '#000000' : c;
       ctx.fillText(keyLabel(binds[i]), x + COL / 2, JUDGE_Y + 46);
     }
 
@@ -240,7 +240,7 @@ const Game = (() => {
     ctx.textAlign = 'left'; ctx.fillStyle = '#ffffff';
     ctx.font = '700 18px "Noto Sans KR", sans-serif';
     ctx.fillText(song.title, 24, 40);
-    ctx.font = '13px "Noto Sans KR", sans-serif'; ctx.fillStyle = '#b8aee0';
+    ctx.font = '13px "Noto Sans KR", sans-serif'; ctx.fillStyle = '#888888';
     ctx.fillText(`${keys}K · 속도 ${settings.speed}${touchMode ? "" : " · Esc 일시정지"}`, 24, 62);
   }
 

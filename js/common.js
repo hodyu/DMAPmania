@@ -39,7 +39,7 @@ const keyLabel = (code) => code.replace(/^Key|^Digit/, '').replace('Semicolon', 
 
 function laneColor(i, k) {
   if (k % 2 && i === (k - 1) / 2) return '#ffd36b';
-  return Math.min(i, k - 1 - i) % 2 ? '#5ec8ff' : '#f2eefc';
+  return Math.min(i, k - 1 - i) % 2 ? '#5ec8ff' : '#eeeeee';
 }
 
 // chart

@@ -88,16 +88,16 @@ const Editor = (() => {
 
   function draw() {
     if (!chart) return;
-    ctx.fillStyle = '#0b0816';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, cv.width, cv.height);
     const beat = 60000 / chart.bpm, sub = snapMs();
     const tTop = tOf(0), tBottom = tOf(cv.height);
     for (let t = snap(tBottom) - sub; t <= tTop; t += sub) {
       const k = Math.round((t - chart.offset) / beat * 1000) / 1000;
-      ctx.fillStyle = k % 4 === 0 ? 'rgba(242,238,252,0.5)' : Number.isInteger(k) ? 'rgba(242,238,252,0.2)' : 'rgba(255,255,255,0.07)';
+      ctx.fillStyle = k % 4 === 0 ? 'rgba(255,255,255,0.5)' : Number.isInteger(k) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)';
       ctx.fillRect(LANE_X, yOf(t), STAGE_W, 1);
     }
-    for (let i = 0; i <= chart.keys; i++) { ctx.fillStyle = '#241b45'; ctx.fillRect(LANE_X + i * laneW(), 0, 1, cv.height); }
+    for (let i = 0; i <= chart.keys; i++) { ctx.fillStyle = '#222222'; ctx.fillRect(LANE_X + i * laneW(), 0, 1, cv.height); }
     const list = drag ? [...chart.notes, { t: drag.t, l: drag.l, d: Math.max(0, drag.end - drag.t) }] : chart.notes;
     list.forEach((n) => {
       const W = laneW(), head = yOf(n.t), tail = yOf(n.t + n.d), x = LANE_X + n.l * W + 3;
@@ -106,7 +106,7 @@ const Editor = (() => {
       if (n.d > 0) { ctx.globalAlpha = 0.5; ctx.fillRect(x + 8, tail, W - 22, head - tail); ctx.globalAlpha = 1; }
       ctx.fillRect(x, head - 8, W - 6, 16);
     });
-    ctx.fillStyle = '#e23a7f';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, HEAD_Y, cv.width, 3);
     $('#edTime').textContent = `${fmt(cur)} / ${fmt(duration())}`;
     $('#edSeek').value = duration() ? (cur / duration()) * 1000 : 0;
