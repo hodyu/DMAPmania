@@ -2,7 +2,7 @@
 // 한 줄 형식: [title, singer, startTime(초), endTime(초), suburl, id]
 // index.html 에서 <script src="DB/db.js"> 로 먼저 읽으면 전역 db 에 복호화된 배열이 들어 있음
 const STREAM_URL = (suburl) => `https://media.dema.mil.kr/mediavod/_definst_/smil:dematv/${suburl}/playlist.m3u8`;
-const SONGS = [{ id: 'demo', title: '데모 메트로놈', artist: 'DMAPmania', bpm: 120, url: 'demo.mp4' }];
+const SONGS = []; // 기본 곡 없음: DB/db.js 의 곡만 사용
 
 // id 는 채보/랭킹 저장 키로 씀 (곡 순서가 바뀌어도 그대로)
 function rowToSong([title, singer, startTime, endTime, suburl, id]) {
