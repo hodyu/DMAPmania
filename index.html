@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BEATLINE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;800&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <video id="video" playsinline></video>
+  <div id="toast"></div>
+
+  <!-- 메인 -->
+  <section id="menu" class="screen center">
+    <h1 class="logo">BEATLINE</h1>
+    <button class="big accent" data-go="play">플레이</button>
+    <button class="big" data-go="edit">에디터</button>
+    <button class="big" data-go="settings">설정</button>
+  </section>
+
+  <!-- 곡 선택 (플레이/에디터 공용) -->
+  <section id="select" class="screen">
+    <div class="left">
+      <button class="link" data-back>← 뒤로</button>
+      <div id="preview" class="preview">영상 미리보기</div>
+      <h2 id="selTitle">-</h2>
+      <p id="selInfo" class="dim">-</p>
+      <button id="startBtn" class="big accent">시작</button>
+    </div>
+    <div class="right">
+      <input id="search" placeholder="제목 또는 아티스트 검색">
+      <ul id="songList"></ul>
+      <div class="files">
+        <span id="songCount" class="dim"></span>
+        <label class="file">db.js 불러오기 <input id="dbFiles" type="file" accept=".js" multiple></label>
+        <label class="file">로컬 .mp4 추가 <input id="localFile" type="file" accept="video/mp4"></label>
+      </div>
+    </div>
+  </section>
+
+  <!-- 플레이 -->
+  <section id="play" class="screen">
+    <canvas id="playCanvas" width="1280" height="720"></canvas>
+    <button id="pauseBtn" aria-label="일시정지">❚❚</button>
+    <div id="result" class="overlay hidden"></div>
+    <div id="pause" class="overlay hidden">
+      <h2>일시정지</h2>
+      <button id="pResume" class="big accent">계속하기</button>
+      <button id="pRetry" class="big">다시 시작</button>
+      <button id="pQuit" class="big">나가기</button>
+    </div>
+  </section>
+
+  <!-- 에디터 -->
+  <section id="editor" class="screen">
+    <div class="bar">
+      <button class="link" data-back>← 뒤로</button>
+      <b id="edTitle"></b>
+      <span class="grow"></span>
+      <button id="edSave">저장</button>
+      <button id="edExport">JSON 복사</button>
+      <label class="file">불러오기 <input id="edImport" type="file" accept=".json"></label>
+      <button id="edTest" class="accent">테스트 플레이</button>
+    </div>
+    <div class="edBody">
+      <canvas id="edCanvas" width="420" height="560"></canvas>
+      <div class="panel">
+        <div class="tools">
+          <button data-tool="note" class="on">노트</button>
+          <button data-tool="long">롱노트</button>
+          <button data-tool="erase">지우기</button>
+        </div>
+        <label>키 수
+          <select id="edKeys"><option>4</option><option>5</option><option>6</option><option>7</option></select>
+        </label>
+        <label>BPM <input id="edBpm" type="number" step="0.01"></label>
+        <label>오프셋 (ms) <input id="edOffset" type="number"></label>
+        <label>비트 스냅
+          <select id="edSnap"><option>1</option><option>2</option><option selected>4</option><option>8</option><option>3</option><option>6</option></select>
+        </label>
+        <p class="dim">클릭: 노트 · 드래그(롱노트 도구): 롱노트<br>우클릭: 삭제 · 휠: 이동 · Space: 재생/정지</p>
+        <p id="edCount" class="dim"></p>
+      </div>
+    </div>
+    <div class="bar">
+      <button id="edPlay" class="accent">▶</button>
+      <span id="edTime">0:00 / 0:00</span>
+      <input id="edSeek" class="grow" type="range" min="0" max="1000" value="0">
+    </div>
+  </section>
+
+  <!-- 설정 -->
+  <section id="settings" class="screen center">
+    <h2>설정</h2>
+    <div class="row">
+      <span>키 모드</span>
+      <div id="keyModes" class="seg"></div>
+    </div>
+    <div class="row col">
+      <span>키 배치 <small class="dim">칸을 누르고 원하는 키를 누르세요</small></span>
+      <div id="keySlots" class="slots"></div>
+      <button id="resetKeys" class="link">기본값으로</button>
+    </div>
+    <label class="row">스크롤 속도 <span><input id="setSpeed" type="range" min="0.3" max="3" step="0.1"> <b id="speedVal"></b></span></label>
+    <label class="row">오디오 오프셋 (ms) <input id="setOffset" type="number"></label>
+    <label class="row">배경 영상 표시 <small class="dim">끄면 더 가벼워져요</small><input id="setBg" type="checkbox"></label>
+    <label class="row">볼륨 <input id="setVolume" type="range" min="0" max="1" step="0.05"></label>
+    <button class="big" data-back>저장하고 돌아가기</button>
+  </section>
+
+  <script src="js/songs.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/select.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

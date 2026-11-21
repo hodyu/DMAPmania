@@ -1,0 +1,110 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0; height: 100vh; overflow: hidden;
+  background: #15102a; color: #f2eefc;
+  font-family: "Noto Sans KR", system-ui, sans-serif;
+}
+button, input, select { font: inherit; color: inherit; }
+button {
+  border: 0; border-radius: 8px; padding: 10px 16px;
+  background: #2a2150; cursor: pointer;
+}
+button:hover { filter: brightness(1.2); }
+input, select { background: #2a2150; border: 0; border-radius: 6px; padding: 8px 10px; }
+.accent { background: #e23a7f; color: #fff; font-weight: 700; }
+.big { width: 320px; padding: 16px; font-size: 22px; font-weight: 700; }
+.link { background: none; color: #b8aee0; padding: 0; align-self: flex-start; }
+.dim { color: #b8aee0; font-size: 14px; line-height: 1.7; }
+.grow { flex: 1; }
+.hidden { display: none !important; }
+#toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10;
+  background: #f2eefc; color: #15102a; padding: 10px 18px; border-radius: 8px;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+#toast.show { opacity: 1; }
+
+.screen { display: none; position: fixed; inset: 0; }
+.screen.active { display: flex; }
+.center { flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.row { width: min(560px, 92vw); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+label.row > span { display: flex; align-items: center; gap: 8px; }
+.row input[type=checkbox] { width: 22px; height: 22px; accent-color: #e23a7f; }
+.row small { flex: 1; }
+.row.col { flex-direction: column; align-items: stretch; }
+.seg { display: flex; gap: 6px; }
+.seg button.on, .slots button.on { background: #e23a7f; color: #fff; }
+.slots { display: flex; gap: 6px; justify-content: center; }
+.slots button { width: 64px; height: 64px; font-size: 20px; font-weight: 800; border: 2px solid var(--c); }
+.slots button.wait { background: #f2eefc; color: #15102a; }
+.logo { font-family: "Exo 2", sans-serif; font-size: 88px; font-style: italic; letter-spacing: 4px; color: #e23a7f; margin: 0 0 30px; }
+
+/* 영상: 플레이 중엔 배경, 곡 선택에선 미리보기 */
+#video { position: fixed; z-index: -1; opacity: 0; }
+body.bg-video #video { inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .3; }
+
+/* 곡 선택 */
+#select { gap: 32px; padding: 32px; overflow-y: auto; }
+#select .left { width: min(520px, 45%); display: flex; flex-direction: column; gap: 14px; }
+#select .right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+#select h2 { margin: 0; font-size: 30px; }
+#select #startBtn { width: 100%; margin-top: auto; }
+.preview { aspect-ratio: 16 / 9; max-height: 32vh; flex-shrink: 0; border-radius: 10px; background: #2a2150; display: grid; place-items: center; color: #b8aee0; }
+#songList { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+#songList li { padding: 12px 20px; border-radius: 8px; background: #211943; cursor: pointer; }
+#songList li.sel { background: #e23a7f; }
+#songList li small { display: block; opacity: .8; }
+.files { display: flex; gap: 18px; align-items: center; }
+.files span { margin-right: auto; }
+#songList li em { font-style: normal; font-size: 11px; font-weight: 800; color: #ffd36b; }
+.file { cursor: pointer; color: #b8aee0; font-size: 14px; }
+.file input { display: none; }
+
+/* 플레이 */
+#play { align-items: center; justify-content: center; }
+#playCanvas { width: 100%; height: 100%; object-fit: contain; touch-action: none; user-select: none; -webkit-user-select: none; }
+#pauseBtn { position: absolute; left: 16px; bottom: 16px; width: 48px; height: 48px; padding: 0; background: rgba(255,255,255,.12); }
+body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+#edCanvas { touch-action: none; }
+
+/* 낮은 화면(폰 가로 등) */
+@media (max-height: 500px) {
+  #select { padding: 12px 16px; }
+  #select .left { gap: 8px; }
+  #select h2 { font-size: 20px; }
+  .big { padding: 10px; font-size: 18px; }
+  .center { gap: 8px; overflow-y: auto; justify-content: flex-start; padding: 12px; }
+  .logo { font-size: 48px; margin-bottom: 8px; }
+  #edCanvas { max-height: none; }
+}
+
+/* 좁은 화면(폰 세로 등) */
+@media (max-width: 800px) {
+  #select { flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto; }
+  #select .left { width: 100%; }
+  .edBody { flex-direction: column; gap: 12px; padding: 12px; overflow-y: auto; }
+  #edCanvas { height: 60vh; }
+  .panel { width: 100%; }
+  .bar { flex-wrap: wrap; }
+  .logo { font-size: 56px; }
+  .big { width: min(320px, 86vw); }
+}
+.overlay {
+  position: absolute; inset: 0; background: rgba(10,7,22,.85);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 20px;
+}
+.overlay .grade { font-size: 120px; font-weight: 800; color: #ffd36b; line-height: 1; }
+.overlay .rscore { font-size: 44px; font-weight: 800; }
+.overlay .counts { display: flex; gap: 18px; color: #d6cff2; }
+.overlay .counts b { display: block; font-size: 14px; color: #b8aee0; }
+.overlay .big { width: 260px; }
+
+/* 에디터 */
+#editor { flex-direction: column; }
+.bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #1f1840; }
+.edBody { flex: 1; display: flex; gap: 40px; justify-content: center; align-items: center; min-height: 0; }
+#edCanvas { height: 100%; max-height: 560px; background: #0b0816; }
+.panel { width: 320px; display: flex; flex-direction: column; gap: 16px; }
+.panel label { display: flex; flex-direction: column; gap: 6px; color: #b8aee0; font-size: 14px; }
+.tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tools .on { background: #e23a7f; color: #fff; }
