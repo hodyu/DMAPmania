@@ -11,31 +11,35 @@
   <video id="video" playsinline></video>
   <div id="toast"></div>
 
-  <section id="menu" class="screen center">
-    <h1 class="logo">DMAPmania</h1>
-    <button class="big accent" data-go="play">플레이</button>
-    <button class="big" data-go="edit">에디터</button>
-    <button class="big" data-go="settings">설정</button>
+  <section id="menu" class="screen">
+    <div class="menu-wrap">
+      <h1 class="logo">DMAPmania</h1>
+      <nav class="menu-nav">
+        <button data-go="play"><span>플레이</span><kbd>P</kbd></button>
+        <button data-go="edit"><span>에디터</span><kbd>E</kbd></button>
+        <button data-go="settings"><span>설정</span><kbd>S</kbd></button>
+      </nav>
+    </div>
   </section>
 
   <section id="select" class="screen">
-    <div class="left">
-      <button class="link" data-back>← 뒤로</button>
-      <div id="preview" class="preview">영상 미리보기</div>
-      <h2 id="selTitle">-</h2>
-      <p id="selInfo" class="dim">-</p>
-      <div id="diffList" class="seg wrap"></div>
-      <button id="startBtn" class="big accent">시작</button>
+    <div class="sel-info">
+      <h2 id="selTitle">곡을 선택하세요</h2>
+      <p id="selArtist"></p>
+      <div id="selStats" class="stats"></div>
+      <div id="diffList" class="diff-list"></div>
     </div>
-    <div class="right">
-      <input id="search" placeholder="제목 또는 아티스트 검색">
+    <div class="sel-list">
+      <input id="search" placeholder="검색 (제목, 아티스트, 초성)">
       <ul id="songList"></ul>
-      <div class="files">
-        <span id="songCount" class="dim"></span>
-        <label class="file">db.js 불러오기 <input id="dbFiles" type="file" accept=".js" multiple></label>
-        <label class="file">로컬 .mp4 추가 <input id="localFile" type="file" accept="video/mp4"></label>
-      </div>
     </div>
+    <footer class="sel-foot">
+      <button class="foot-btn" data-back>뒤로</button>
+      <label class="foot-btn">db.js 불러오기 <input id="dbFiles" type="file" accept=".js" multiple></label>
+      <label class="foot-btn">로컬 .mp4 <input id="localFile" type="file" accept="video/mp4"></label>
+      <span id="songCount" class="grow"></span>
+      <button id="startBtn" class="accent play-btn">시작</button>
+    </footer>
   </section>
 
   <section id="play" class="screen">

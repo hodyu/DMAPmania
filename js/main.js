@@ -78,7 +78,19 @@ window.addEventListener('keydown', (e) => {
   if (id === 'settings' && Settings.capture(e)) return;
   if (id === 'play') Game.onKey(e, true);
   if (id === 'editor') Editor.onKey(e);
-  if (id === 'select' && e.key === 'Enter') Select.start();
+  if (id === 'menu') {
+    const go = { KeyP: 'play', KeyE: 'edit', KeyS: 'settings' }[e.code];
+    if (go) document.querySelector(`[data-go="${go}"]`).click();
+  }
+  const typing = e.target.tagName === 'INPUT' && /ArrowLeft|ArrowRight/.test(e.code);
+  if (id === 'select' && !typing) {
+    if (e.key === 'Enter') Select.start();
+    else if (e.code === 'ArrowDown') { e.preventDefault(); Select.move(1); }
+    else if (e.code === 'ArrowUp') { e.preventDefault(); Select.move(-1); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); Select.moveDiff(1); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); Select.moveDiff(-1); }
+    else if (e.code === 'Escape') document.querySelector('#select [data-back]').click();
+  }
 });
 window.addEventListener('keyup', (e) => {
   if (current() === 'play') Game.onKey(e, false);

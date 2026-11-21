@@ -23,11 +23,16 @@ const Select = {
       const text = (s.title + ' ' + (s.artist || '')).toLowerCase();
       return text.includes(q) || chosung(text).includes(q);
     });
+    this.hits = hits.slice(0, 200);
     const list = $('#songList');
     list.innerHTML = '';
     for (const s of hits.slice(0, 200)) {
       const li = document.createElement('li');
-      li.innerHTML = `${s.isNew ? '<em>NEW</em> ' : ''}${esc(s.title)}<small>${esc(s.artist || '')}${s.end ? ' · ' + fmt(segLength(s)) : ''}</small>`;
+      const pips = (s === this.current ? this.charts : loadCharts(s))
+        .map((c) => `<i style="--c:${levelColor(c.level)}"></i>`).join('');
+      li.innerHTML = `<b>${s.isNew ? '<em>NEW</em>' : ''}${esc(s.title)}</b>
+        <small>${esc(s.artist || '')}${s.end ? ' · ' + fmt(segLength(s)) : ''}</small>
+        <span class="pips">${pips}</span>`;
       li.classList.toggle('sel', s === this.current);
       li.onclick = () => this.pick(s);
       list.appendChild(li);
@@ -43,27 +48,45 @@ const Select = {
     this.render();
     this.renderDiffs();
     $('#selTitle').textContent = song.title;
+    $('#selArtist').textContent = song.artist || '';
+    $('#songList li.sel')?.scrollIntoView({ block: 'nearest' });
     try {
       await loadVideo(song);
-      const r = $('#preview').getBoundingClientRect();
-      Object.assign(video.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', opacity: 1, zIndex: 1 });
+      if (this.current !== song) return;
       seekSong(song, segLength(song) * 0.3);
-      video.play();
+      video.play().catch(() => {});
+      this.renderDiffs();
     } catch (e) {
-      $('#selInfo').textContent = e.message;
+      toast(e.message);
     }
   },
 
   renderDiffs() {
     const chart = this.charts[this.diff];
     $('#diffList').innerHTML = this.charts.map((c, i) =>
-      `<button data-d="${i}" class="${i === this.diff ? 'on' : ''}">${esc(diffLabel(c))}</button>`).join('');
-    $('#selInfo').textContent = `${this.current.artist || ''} · ${chart.keys}K · BPM ${chart.bpm} · 노트 ${chart.notes.length || '자동'}`;
+      `<button data-d="${i}" class="diff-row${i === this.diff ? ' on' : ''}" style="--c:${levelColor(c.level)}">
+        <span class="lv">${c.level}</span><span class="dn">${esc(c.name)}</span><span class="dk">${c.keys}K</span>
+      </button>`).join('');
+    const len = segLength(this.current);
+    const stat = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
+    $('#selStats').innerHTML = stat('길이', len ? fmt(len) : '-') + stat('BPM', chart.bpm) +
+      stat('노트', chart.notes.length || '자동') + stat('키', chart.keys + 'K');
+  },
+
+  move(d) {
+    const h = this.hits || [];
+    if (!h.length) return;
+    const i = h.indexOf(this.current);
+    this.pick(h[(i < 0 ? 0 : i + d + h.length) % h.length]);
+  },
+  moveDiff(d) {
+    if (!this.current) return;
+    this.diff = Math.max(0, Math.min(this.charts.length - 1, this.diff + d));
+    this.renderDiffs();
   },
 
   hidePreview() {
     video.pause();
-    video.removeAttribute('style');
   },
 
   start() {
@@ -76,7 +99,7 @@ const Select = {
 };
 
 $('#diffList').onclick = (e) => {
-  const d = e.target.dataset.d;
+  const d = e.target.closest('[data-d]')?.dataset.d;
   if (d === undefined) return;
   Select.diff = Number(d);
   Select.renderDiffs();

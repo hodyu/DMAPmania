@@ -4,6 +4,7 @@ const video = $('#video');
 function show(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
   document.body.classList.toggle('bg-video', id === 'play' && settings.bgVideo);
+  document.body.classList.toggle('bg-select', id === 'select');
 }
 
 function toast(msg) {
@@ -72,6 +73,8 @@ function saveCharts(song, charts) {
   store.set('charts:' + song.id, JSON.stringify(charts));
 }
 const diffLabel = (c) => `${c.name} Lv.${c.level}`;
+const LV_COLORS = ['#6ec6ff', '#6ee7a8', '#e8e36a', '#ffb35c', '#ff6b6b', '#c78bff', '#9aa0ff'];
+const levelColor = (lv) => LV_COLORS[Math.min(LV_COLORS.length - 1, Math.floor((Math.max(1, lv) - 1) / 2))];
 
 // 채보 없으면 대충 자동 생성
 function autoChart(chart, durationMs) {
