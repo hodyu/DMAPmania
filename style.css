@@ -64,8 +64,7 @@ kbd { font: 13px sans-serif; color: #777; border: 1px solid #333; border-radius:
 .ranking li { display: grid; grid-template-columns: 28px 44px 1fr auto 70px; align-items: center; gap: 12px; padding: 8px 14px; background: #000a; border: 1px solid #222; }
 .ranking li:first-child { border-left: 4px solid #ffd36b; }
 .ranking .rank { color: #666; }
-.ranking .failed { margin: 0; color: #ff6b6b; letter-spacing: 4px; }
-.grade { font: 800 26px sans-serif; color: #ffd36b; text-align: center; }
+.ranking .grade { font: 800 26px sans-serif; color: #ffd36b; text-align: center; }
 .ranking .rs { font: 700 24px sans-serif; }
 .ranking small { color: #aaa; font-size: 12px; text-align: right; }
 .ranking time { color: #666; font-size: 12px; text-align: right; }
@@ -96,6 +95,7 @@ kbd { font: 13px sans-serif; color: #777; border: 1px solid #333; border-radius:
 #playCanvas { width: 100%; height: 100%; object-fit: contain; touch-action: none; user-select: none; }
 #pauseBtn { position: absolute; left: 16px; bottom: 16px; width: 48px; height: 48px; padding: 0; background: #fff2; }
 .overlay { position: absolute; inset: 0; background: #000e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 20px; }
+.failed { margin: 0; color: #ff6b6b; letter-spacing: 4px; }
 .failed { margin: 0; color: #ff6b6b; letter-spacing: 4px; }
 .grade { font: 800 140px/1 sans-serif; color: #ffd36b; }
 .rscore { font: 800 52px sans-serif; }

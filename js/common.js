@@ -19,6 +19,7 @@ function toast(msg) {
 const store = {
   get(k, fallback) { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  remove(k) { try { localStorage.removeItem(k); } catch {} },
 };
 
 // settings (키는 e.code 기준이라 한글 입력 상태에서도 동작)
@@ -55,11 +56,17 @@ function loadCharts(song) {
   charts.forEach((c) => (c.id ||= c.name)); // 랭킹을 난이도 id 로 저장하므로 id 가 없으면 이름으로
   return charts;
 }
+// 채보(키 수, 노트)가 바뀐 난이도와 지워진 난이도는 랭킹을 초기화
+const chartShape = (c) => JSON.stringify([c.keys, c.notes]);
 function saveCharts(song, charts) {
+  const before = loadCharts(song);
   for (const c of charts) {
     c.notes.sort((a, b) => a.t - b.t);
     c.stars = starRating(c.notes, c.keys); // 목록에서 매번 계산하지 않게 저장해 둠
+    const old = before.find((o) => o.id === c.id);
+    if (old && chartShape(old) !== chartShape(c)) store.remove(scoreKey(song, c));
   }
+  for (const old of before) if (!charts.some((c) => c.id === old.id)) store.remove(scoreKey(song, old));
   store.set('charts:' + song.id, charts);
 }
 
