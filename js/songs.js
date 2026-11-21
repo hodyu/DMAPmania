@@ -1,26 +1,30 @@
-// DMAP-Plus db.js 파서. row: [title, artist, start, end, suburl, musicId]
-// 문자열이 글자마다 +1 인코딩된 파일도 있음
-const DB_FILES = ['DB/db.js'];
+// 곡 DB: DMAP-Plus 의 DB/db.js 를 그대로 사용 (github.com/wei756/DMAP-Plus)
+// 한 줄 형식: [title, singer, startTime(초), endTime(초), suburl, id]
+// index.html 에서 <script src="DB/db.js"> 로 먼저 읽으면 전역 db 에 복호화된 배열이 들어 있음
 const STREAM_URL = (suburl) => `https://media.dema.mil.kr/mediavod/_definst_/smil:dematv/${suburl}/playlist.m3u8`;
 const SONGS = [{ id: 'demo', title: '데모 메트로놈', artist: 'DMAPmania', bpm: 120, url: 'demo.mp4' }];
-const DB_ROW = /\[\s*(['"])((?:\\.|.)*?)\1\s*,\s*(['"])((?:\\.|.)*?)\3\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(['"])((?:\\.|.)*?)\7\s*,\s*(\d+)\s*\]/g;
 
+// id 는 채보/랭킹 저장 키로 씀 (곡 순서가 바뀌어도 그대로)
+function rowToSong([title, singer, startTime, endTime, suburl, id]) {
+  return {
+    id: 'dmap:' + id,
+    title: title.replace(/^\[new\]\s*/i, ''),
+    isNew: /^\[new\]/i.test(title),
+    artist: singer,
+    start: Number(startTime),
+    end: Number(endTime),
+    url: STREAM_URL(suburl),
+  };
+}
+
+// 설정에서 db.js 파일을 추가로 불러올 때: 코드를 실행하지 않고 글자만 읽음
+// 복호화 코드(charCodeAt() - 1)가 살아 있으면 글자마다 -1
+const DB_ROW = /\[\s*(['"])((?:\\.|.)*?)\1\s*,\s*(['"])((?:\\.|.)*?)\3\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(['"])((?:\\.|.)*?)\7\s*,\s*(\d+)\s*\]/g;
 function parseDbJs(text) {
   const live = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   const encoded = /charCodeAt\(\)\s*-\s*1/.test(live);
   const dec = (s) => (encoded ? [...s].map((c) => String.fromCharCode(c.charCodeAt(0) - 1)).join('') : s);
-  return [...live.matchAll(DB_ROW)].map((m) => {
-    const title = dec(m[2]);
-    return {
-      id: 'dmap:' + m[9],
-      title: title.replace(/^\[new\]\s*/i, ''),
-      isNew: /^\[new\]/i.test(title),
-      artist: dec(m[4]),
-      start: Number(m[5]),
-      end: Number(m[6]),
-      url: STREAM_URL(dec(m[8])),
-    };
-  });
+  return [...live.matchAll(DB_ROW)].map((m) => rowToSong([dec(m[2]), dec(m[4]), m[5], m[6], dec(m[8]), m[9]]));
 }
 
 // 같은 id 는 먼저 나온 것만 남김
@@ -29,10 +33,9 @@ function mergeSongs(...lists) {
   return lists.flat().filter((s) => !seen.has(s.id) && seen.add(s.id));
 }
 
-async function loadSongs() {
-  const fromFiles = await Promise.all(DB_FILES.map((path) =>
-    fetch(path).then((res) => (res.ok ? res.text() : '')).then(parseDbJs).catch(() => [])));
-  return mergeSongs(SONGS, ...fromFiles, store.get('dbSongs', []));
+function loadSongs() {
+  const fromDb = typeof db === 'undefined' ? [] : db.map(rowToSong); // DB/db.js 가 없으면 빈 목록
+  return mergeSongs(SONGS, fromDb, store.get('dbSongs', []));
 }
 
 async function importDbFiles(files) {

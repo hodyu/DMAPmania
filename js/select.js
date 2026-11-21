@@ -6,10 +6,10 @@ const Select = {
   diff: 0,
   mode: 'play', // 'play' | 'edit'
 
-  async open(mode) {
+  open(mode) {
     this.mode = mode;
     $('#startBtn').textContent = mode === 'play' ? '시작' : '편집하기';
-    if (!this.songs.length) this.songs = await loadSongs();
+    if (!this.songs.length) this.songs = loadSongs();
     show('select');
     if (this.current) this.pick(this.current);
     else this.render();
