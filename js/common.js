@@ -48,15 +48,37 @@ const DIFF_NAMES = ['Normal', 'Hard', 'Insane', 'Expert'];
 const LV_COLORS = ['#6ec6ff', '#6ee7a8', '#e8e36a', '#ffb35c', '#ff6b6b', '#c78bff'];
 
 function newChart(song, base = {}) {
-  return { name: 'Normal', level: 1, keys: base.keys || settings.keyCount, bpm: base.bpm || song.bpm || 120, offset: base.offset || 0, notes: [] };
+  return { id: 'default', name: 'Normal', level: 1, keys: base.keys || settings.keyCount, bpm: base.bpm || song.bpm || 120, offset: base.offset || 0, notes: [] };
 }
-const loadCharts = (song) => store.get('charts:' + song.id, null) || [newChart(song)];
+function loadCharts(song) {
+  const charts = store.get('charts:' + song.id, null) || [newChart(song)];
+  charts.forEach((c) => (c.id ||= c.name)); // 랭킹을 난이도 id 로 저장하므로 id 가 없으면 이름으로
+  return charts;
+}
 function saveCharts(song, charts) {
-  charts.forEach((c) => c.notes.sort((a, b) => a.t - b.t));
+  for (const c of charts) {
+    c.notes.sort((a, b) => a.t - b.t);
+    c.stars = starRating(c.notes, c.keys); // 목록에서 매번 계산하지 않게 저장해 둠
+  }
   store.set('charts:' + song.id, charts);
+}
+
+// 랭킹: 곡+난이도마다 점수 상위 20개
+const scoreKey = (song, chart) => `scores:${song.id}:${chart.id}`;
+const loadScores = (song, chart) => store.get(scoreKey(song, chart), []);
+function saveScore(song, chart, entry) {
+  store.set(scoreKey(song, chart), [...loadScores(song, chart), entry].sort((a, b) => b.score - a.score).slice(0, 20));
+}
+function timeAgo(at) {
+  const m = Math.floor((Date.now() - at) / 60000);
+  if (m < 1) return '방금';
+  if (m < 60) return m + '분 전';
+  if (m < 1440) return Math.floor(m / 60) + '시간 전';
+  return Math.floor(m / 1440) + '일 전';
 }
 const diffLabel = (c) => `${c.name} Lv.${c.level}`;
 const levelColor = (lv) => LV_COLORS[Math.min(LV_COLORS.length - 1, Math.floor((lv - 1) / 2))];
+const starColor = (stars) => LV_COLORS[Math.min(LV_COLORS.length - 1, Math.floor(stars / 1.5))];
 
 // 채보가 비어 있으면 박자에 맞춰 대충 생성
 function autoChart(chart, durationMs) {
@@ -168,4 +190,5 @@ function starRating(notes, keys) {
   }
   return difficulty * STAR_SCALING_FACTOR;
 }
-const starText = (chart) => (chart.notes.length ? '★' + starRating(chart.notes, chart.keys).toFixed(2) : '★ -');
+const chartStars = (chart) => chart.stars ?? starRating(chart.notes, chart.keys);
+const starText = (chart) => (chart.notes.length ? '★' + chartStars(chart).toFixed(2) : '★ -');

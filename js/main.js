@@ -23,6 +23,7 @@ const Settings = {
     $('#setOffset').value = settings.offset;
     $('#setVolume').value = settings.volume;
     $('#setBg').checked = settings.bgVideo;
+    $('#dbCount').textContent = `저장된 곡 ${store.get('dbSongs', []).length}개`;
     this.render();
     show('settings');
   },
@@ -65,6 +66,14 @@ $('#keySlots').onclick = (e) => {
 $('#resetKeys').onclick = () => {
   settings.binds[Settings.mode] = [...DEFAULT_BINDS[Settings.mode]];
   Settings.render();
+};
+$('#dbFiles').onchange = async (e) => {
+  if (!e.target.files.length) return;
+  const { added, saved } = await importDbFiles(e.target.files);
+  if (Select.songs.length) Select.songs = mergeSongs(Select.songs, saved);
+  $('#dbCount').textContent = `저장된 곡 ${saved.length}개`;
+  toast(added ? `db.js에서 ${added}곡을 읽었습니다` : '곡을 찾지 못했습니다');
+  e.target.value = '';
 };
 $('#setSpeed').oninput = (e) => ($('#speedVal').textContent = e.target.value);
 

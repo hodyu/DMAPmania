@@ -194,6 +194,7 @@ const Editor = (() => {
   $('#edLevel').onchange = (e) => { chart.level = Math.max(1, Math.round(e.target.value) || 1); refreshDiffs(); };
   $('#edDiffAdd').onclick = () => {
     const c = newChart(song, chart);
+    c.id = Date.now().toString(36);
     c.name = DIFF_NAMES[charts.length] || 'Extra ' + charts.length;
     c.level = Math.max(...charts.map((x) => x.level)) + 1;
     charts.push(c);

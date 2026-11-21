@@ -9,13 +9,14 @@ const Game = (() => {
   const MISS = 164;
   const RESULT_NAMES = ['MAX', '300', '200', '100', '50', 'MISS'];
 
-  let song, opts, diffName, keys, COL, left, total, binds, colors, runId = 0, paused, startAt, started;
+  let song, opts, chart, diffName, keys, COL, left, total, binds, colors, runId = 0, paused, startAt, started;
   let lanes, next, holds, pressed, flash, stats, last, errors, hp, endTime, clock;
 
   function start(s, o = {}) {
     song = s; opts = o;
     const run = ++runId; // 이전 루프는 runId 가 달라져서 멈춤
-    const chart = o.chart || loadCharts(s)[0], from = o.from || 0;
+    chart = o.chart || loadCharts(s)[0];
+    const from = o.from || 0;
     diffName = diffLabel(chart) + " " + starText(chart);
     keys = chart.keys;
     binds = settings.binds[keys];
@@ -226,6 +227,7 @@ const Game = (() => {
     video.pause();
     const a = acc();
     const grade = a >= 100 ? 'SS' : a >= 95 ? 'S' : a >= 90 ? 'A' : a >= 80 ? 'B' : a >= 70 ? 'C' : 'D';
+    if (!opts.onExit) saveScore(song, chart, { score: score(), acc: a, combo: stats.maxCombo, grade, at: Date.now() }); // 에디터 테스트는 기록 안 함
     $('#result').innerHTML = `<div class="grade">${grade}</div>
       <div class="rscore">${score().toLocaleString()}</div>
       <div>정확도 ${a.toFixed(2)}% · 최대 콤보 ${stats.maxCombo}x</div>
