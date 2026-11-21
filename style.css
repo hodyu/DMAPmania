@@ -39,11 +39,9 @@ label.row > span { display: flex; align-items: center; gap: 8px; }
 .slots button.wait { background: #f2eefc; color: #15102a; }
 .logo { font-family: "Exo 2", sans-serif; font-size: 88px; font-style: italic; letter-spacing: 4px; color: #e23a7f; margin: 0 0 30px; }
 
-/* 영상: 플레이 중엔 배경, 곡 선택에선 미리보기 */
 #video { position: fixed; z-index: -1; opacity: 0; }
 body.bg-video #video { inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .3; }
 
-/* 곡 선택 */
 #select { gap: 32px; padding: 32px; overflow-y: auto; }
 #select .left { width: min(520px, 45%); display: flex; flex-direction: column; gap: 14px; }
 #select .right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
@@ -60,14 +58,13 @@ body.bg-video #video { inset: 0; width: 100%; height: 100%; object-fit: cover; o
 .file { cursor: pointer; color: #b8aee0; font-size: 14px; }
 .file input { display: none; }
 
-/* 플레이 */
 #play { align-items: center; justify-content: center; }
 #playCanvas { width: 100%; height: 100%; object-fit: contain; touch-action: none; user-select: none; -webkit-user-select: none; }
 #pauseBtn { position: absolute; left: 16px; bottom: 16px; width: 48px; height: 48px; padding: 0; background: rgba(255,255,255,.12); }
 body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 #edCanvas { touch-action: none; }
 
-/* 낮은 화면(폰 가로 등) */
+/* landscape phone */
 @media (max-height: 500px) {
   #select { padding: 12px 16px; }
   #select .left { gap: 8px; }
@@ -78,7 +75,7 @@ body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   #edCanvas { max-height: none; }
 }
 
-/* 좁은 화면(폰 세로 등) */
+/* portrait phone */
 @media (max-width: 800px) {
   #select { flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto; }
   #select .left { width: 100%; }
@@ -99,7 +96,6 @@ body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .overlay .counts b { display: block; font-size: 14px; color: #b8aee0; }
 .overlay .big { width: 260px; }
 
-/* 에디터 */
 #editor { flex-direction: column; }
 .bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #1f1840; }
 .edBody { flex: 1; display: flex; gap: 40px; justify-content: center; align-items: center; min-height: 0; }

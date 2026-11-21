@@ -1,23 +1,14 @@
-// 플레이 화면 (osu!mania 스타일): 4~7키, 판정, 콤보, 점수, 체력, 오차 막대, 일시정지
-//
-// 최적화 포인트
-// - 노트를 레인별 배열로 나누고 "다음 판정할 노트" 위치(next)만 기억 → 매 프레임 전체 노트를 돌지 않음
-// - 화면에 보이는 노트만 그림 (보이는 범위를 벗어나면 바로 멈춤)
-// - 같은 색 노트는 Path2D 하나로 모아서 한 번에 칠함
-// - 스테이지(검은 배경, 줄)는 미리 그려 두고 복사만 함, 레인 빛 그라데이션도 미리 만들어 둠
-// - 영상 시간(currentTime)은 갱신이 띄엄띄엄이라 노트가 끊겨 보임 → performance.now() 로 보간
-// - 루프가 두 개 돌지 않도록 실행 번호(runId)로 관리
 const Game = (() => {
   const cv = $('#playCanvas');
   const ctx = cv.getContext('2d');
   const W = 1280, H = 720, JUDGE_Y = 600;
-  const touchMode = matchMedia('(pointer: coarse)').matches; // 터치 기기면 레인을 넓게
+  const touchMode = matchMedia('(pointer: coarse)').matches;
   let COL = 76;
-  // [창(ms), 이름, 점수, 색]  — osu!mania 판정 이름
+  // [window(ms), name, score, color]
   const J = [[16, 'MAX', 300, '#ffffff'], [40, '300', 300, '#ffd36b'], [73, '200', 200, '#7be38a'],
              [103, '100', 100, '#5ec8ff'], [127, '50', 50, '#c9a7ff']];
   const MISS = 164;
-  const stage = document.createElement('canvas'); // 미리 그린 스테이지
+  const stage = document.createElement('canvas');
   stage.width = W; stage.height = H;
 
   let song, opts, keys, left, total, binds, colors, glows, runId = 0, paused, startAt, started;
@@ -25,7 +16,7 @@ const Game = (() => {
 
   function start(s, o = {}) {
     song = s; opts = o;
-    const run = ++runId; // 이전 루프는 자동으로 멈춤
+    const run = ++runId;
     const chart = o.chart || loadChart(s);
     keys = chart.keys;
     binds = settings.binds[keys];
@@ -52,12 +43,12 @@ const Game = (() => {
       holds = Array(keys).fill(null);
       pressed = Array(keys).fill(false);
       flash = Array(keys).fill(0);
-      stats = { sum: 0, combo: 0, maxCombo: 0, count: [0, 0, 0, 0, 0, 0] }; // MAX 300 200 100 50 MISS
+      stats = { sum: 0, combo: 0, maxCombo: 0, count: [0, 0, 0, 0, 0, 0] };
       errors = []; hp = 1; last = null;
       prepareStage();
       video.pause();
       seekSong(s, o.from || 0);
-      startAt = performance.now() + 1500; // 준비 시간
+      startAt = performance.now() + 1500;
       started = false; paused = false; clock = null;
       requestAnimationFrame(() => loop(run));
     }).catch((e) => { toast(e.message); exit(); });
@@ -81,14 +72,14 @@ const Game = (() => {
     });
   }
 
-  // 현재 곡 시간(ms). 영상 시간을 기준으로 부드럽게 보간, 시작 전엔 음수 쪽으로
+  // currentTime 이 띄엄띄엄 갱신돼서 performance.now() 로 보간
   function now() {
     const p = performance.now();
     if (!started) return (opts.from || 0) - (startAt - p);
     const media = songTime(song);
     if (!clock || video.paused) clock = { media, p };
     let t = clock.media + (p - clock.p) * video.playbackRate;
-    if (Math.abs(t - media) > 60) { clock = { media, p }; t = media; } // 많이 어긋나면 다시 맞춤
+    if (Math.abs(t - media) > 60) { clock = { media, p }; t = media; }
     return t - settings.offset;
   }
 
@@ -125,7 +116,7 @@ const Game = (() => {
     const n = holds[l];
     if (!n) return;
     holds[l] = null;
-    if (now() < n.t + n.d - MISS) miss(); // 롱노트를 너무 일찍 뗌
+    if (now() < n.t + n.d - MISS) miss();
   }
 
   function loop(run) {
@@ -135,8 +126,8 @@ const Game = (() => {
       const t = now();
       for (let l = 0; l < keys; l++) {
         const a = lanes[l];
-        while (next[l] < a.length && t - a[next[l]].t > MISS) { next[l]++; miss(); } // 지나간 노트 = MISS
-        if (holds[l] && t >= holds[l].t + holds[l].d) holds[l] = null; // 롱노트 끝
+        while (next[l] < a.length && t - a[next[l]].t > MISS) { next[l]++; miss(); }
+        if (holds[l] && t >= holds[l].t + holds[l].d) holds[l] = null;
       }
       draw(t);
       if (t > endTime || video.ended) return finish();
@@ -144,27 +135,25 @@ const Game = (() => {
     requestAnimationFrame(() => loop(run));
   }
 
-  // ---- 그리기 ----
+  // draw
   function draw(t) {
     const speed = 0.6 * settings.speed; // px / ms
-    const tMax = t + (JUDGE_Y + 30) / speed; // 이보다 늦은 노트는 화면 밖
+    const tMax = t + (JUDGE_Y + 30) / speed;
     const p = performance.now();
     ctx.clearRect(0, 0, W, H);
     ctx.drawImage(stage, 0, 0);
 
-    // 누른 레인 빛
     for (let i = 0; i < keys; i++) {
       if (!pressed[i]) continue;
       ctx.fillStyle = glows[i];
       ctx.fillRect(left + i * COL, JUDGE_Y - 300, COL, 300);
     }
 
-    // 노트: 레인(=색)마다 Path2D 하나로 모아서 한 번에 칠함
     const w = COL - 6;
     for (let l = 0; l < keys; l++) {
       const heads = new Path2D(), bodies = new Path2D(), x = left + l * COL + 3, a = lanes[l];
       const h = holds[l];
-      if (h) { // 누르고 있는 롱노트
+      if (h) {
         const tail = JUDGE_Y - (h.t + h.d - t) * speed;
         bodies.rect(x + 8, tail, w - 16, JUDGE_Y - tail);
         heads.roundRect(x, tail - 6, w, 10, 4);
@@ -172,7 +161,7 @@ const Game = (() => {
       }
       for (let k = next[l]; k < a.length; k++) {
         const n = a[k];
-        if (n.t > tMax) break; // 여기부터는 전부 화면 밖
+        if (n.t > tMax) break;
         const head = JUDGE_Y - (n.t - t) * speed;
         if (n.d > 0) {
           const tail = JUDGE_Y - (n.t + n.d - t) * speed;
@@ -186,7 +175,6 @@ const Game = (() => {
       ctx.globalAlpha = 1; ctx.fill(heads);
     }
 
-    // 리셉터(키)
     ctx.textAlign = 'center';
     ctx.font = '700 18px "Exo 2", sans-serif';
     ctx.lineWidth = 2;
@@ -200,13 +188,11 @@ const Game = (() => {
       ctx.fillText(keyLabel(binds[i]), x + COL / 2, JUDGE_Y + 46);
     }
 
-    // 체력 (스테이지 오른쪽)
     const hx = left + COL * keys + 10;
     ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fillRect(hx, 80, 8, JUDGE_Y - 80);
     ctx.fillStyle = hp > 0.3 ? '#7be38a' : '#ff6b6b';
     ctx.fillRect(hx, JUDGE_Y - (JUDGE_Y - 80) * hp, 8, (JUDGE_Y - 80) * hp);
 
-    // 콤보 / 판정 (튀어나오는 애니메이션)
     const cx = left + (COL * keys) / 2;
     if (stats.combo > 0) {
       ctx.fillStyle = '#ffffff'; ctx.font = '800 54px "Exo 2", sans-serif';
@@ -223,7 +209,6 @@ const Game = (() => {
       ctx.restore();
     }
 
-    // 오차 막대 (화면 아래 가운데)
     const ew = 260, ey = H - 14;
     for (let i = J.length - 1; i >= 0; i--) {
       const bw = (J[i][0] / MISS) * ew;
@@ -240,7 +225,6 @@ const Game = (() => {
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffffff'; ctx.fillRect(W / 2 - 1, ey - 12, 2, 24);
 
-    // 점수 / 정확도 / 진행 (오른쪽 위)
     ctx.textAlign = 'right';
     ctx.font = '800 44px "Exo 2", sans-serif';
     ctx.fillText(String(score()).padStart(7, '0'), W - 28, 58);
@@ -253,7 +237,6 @@ const Game = (() => {
     ctx.beginPath(); ctx.arc(W - 160, 82, 12, 0, Math.PI * 2);
     ctx.strokeStyle = '#ffffff'; ctx.stroke();
 
-    // 곡 정보 (왼쪽 위)
     ctx.textAlign = 'left'; ctx.fillStyle = '#ffffff';
     ctx.font = '700 18px "Noto Sans KR", sans-serif';
     ctx.fillText(song.title, 24, 40);
@@ -265,7 +248,6 @@ const Game = (() => {
   const acc = () => (judged() ? (stats.sum / (judged() * 300)) * 100 : 100);
   const score = () => Math.round((stats.sum / (Math.max(total, 1) * 300)) * 1000000);
 
-  // ---- 일시정지 / 결과 ----
   function pause() {
     paused = true; video.pause();
     pressed.fill(false); holds.fill(null); touches.clear();
@@ -305,14 +287,13 @@ const Game = (() => {
     else Select.open('play');
   }
 
-  // ---- 터치 / 마우스 ----
-  // 손가락마다(pointerId) 레인을 기억해서 여러 손가락 동시 입력, 레인 사이로 미끄러져도 따라감
+  // touch
   const touches = new Map();
   function laneAt(clientX) {
     const r = cv.getBoundingClientRect();
-    const s = Math.min(r.width / W, r.height / H); // 캔버스가 화면에 맞춰 줄어든 비율
+    const s = Math.min(r.width / W, r.height / H);
     const x = (clientX - r.left - (r.width - W * s) / 2) / s;
-    return Math.max(0, Math.min(keys - 1, Math.floor((x - left) / COL))); // 스테이지 밖은 가장 가까운 레인
+    return Math.max(0, Math.min(keys - 1, Math.floor((x - left) / COL)));
   }
   const playable = () => lanes && !paused && $('#result').classList.contains('hidden');
   cv.addEventListener('pointerdown', (e) => {
@@ -335,7 +316,7 @@ const Game = (() => {
     if (!touches.has(e.pointerId)) return;
     const l = touches.get(e.pointerId);
     touches.delete(e.pointerId);
-    if (lanes && ![...touches.values()].includes(l)) keyUp(l); // 같은 레인을 누른 다른 손가락이 없을 때만 뗌
+    if (lanes && ![...touches.values()].includes(l)) keyUp(l);
   };
   cv.addEventListener('pointerup', lift);
   cv.addEventListener('pointercancel', lift);

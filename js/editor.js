@@ -1,4 +1,3 @@
-// 곡 에디터: 노트 배치 / 삭제 / 롱노트, BPM·오프셋·스냅, 저장·내보내기
 const Editor = (() => {
   const cv = $('#edCanvas');
   const ctx = cv.getContext('2d');
@@ -37,8 +36,6 @@ const Editor = (() => {
   }
   function remove(n) { chart.notes = chart.notes.filter((x) => x !== n); }
 
-  // 마우스·터치 공용 (Pointer Events)
-  // 노트 도구: 탭/클릭하면 놓기, 위아래로 끌면 화면 이동 / 롱노트 도구: 끌어서 길이 정하기
   let press = null;
   cv.onpointerdown = (e) => {
     const p = pointer(e);
@@ -93,7 +90,6 @@ const Editor = (() => {
     if (!chart) return;
     ctx.fillStyle = '#0b0816';
     ctx.fillRect(0, 0, cv.width, cv.height);
-    // 박자선
     const beat = 60000 / chart.bpm, sub = snapMs();
     const tTop = tOf(0), tBottom = tOf(cv.height);
     for (let t = snap(tBottom) - sub; t <= tTop; t += sub) {
@@ -102,7 +98,6 @@ const Editor = (() => {
       ctx.fillRect(LANE_X, yOf(t), STAGE_W, 1);
     }
     for (let i = 0; i <= chart.keys; i++) { ctx.fillStyle = '#241b45'; ctx.fillRect(LANE_X + i * laneW(), 0, 1, cv.height); }
-    // 노트
     const list = drag ? [...chart.notes, { t: drag.t, l: drag.l, d: Math.max(0, drag.end - drag.t) }] : chart.notes;
     list.forEach((n) => {
       const W = laneW(), head = yOf(n.t), tail = yOf(n.t + n.d), x = LANE_X + n.l * W + 3;
@@ -111,7 +106,6 @@ const Editor = (() => {
       if (n.d > 0) { ctx.globalAlpha = 0.5; ctx.fillRect(x + 8, tail, W - 22, head - tail); ctx.globalAlpha = 1; }
       ctx.fillRect(x, head - 8, W - 6, 16);
     });
-    // 재생 위치
     ctx.fillStyle = '#e23a7f';
     ctx.fillRect(0, HEAD_Y, cv.width, 3);
     $('#edTime').textContent = `${fmt(cur)} / ${fmt(duration())}`;
@@ -119,7 +113,6 @@ const Editor = (() => {
     $('#edCount').textContent = `노트 ${chart.notes.length}개`;
   }
 
-  // ---- 패널 / 버튼 ----
   document.querySelectorAll('[data-tool]').forEach((b) => (b.onclick = () => {
     tool = b.dataset.tool;
     document.querySelectorAll('[data-tool]').forEach((x) => x.classList.toggle('on', x === b));

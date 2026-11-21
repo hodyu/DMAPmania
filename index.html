@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BEATLINE</title>
+  <title>DMAPmania</title>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;800&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -11,15 +11,13 @@
   <video id="video" playsinline></video>
   <div id="toast"></div>
 
-  <!-- 메인 -->
   <section id="menu" class="screen center">
-    <h1 class="logo">BEATLINE</h1>
+    <h1 class="logo">DMAPmania</h1>
     <button class="big accent" data-go="play">플레이</button>
     <button class="big" data-go="edit">에디터</button>
     <button class="big" data-go="settings">설정</button>
   </section>
 
-  <!-- 곡 선택 (플레이/에디터 공용) -->
   <section id="select" class="screen">
     <div class="left">
       <button class="link" data-back>← 뒤로</button>
@@ -39,7 +37,6 @@
     </div>
   </section>
 
-  <!-- 플레이 -->
   <section id="play" class="screen">
     <canvas id="playCanvas" width="1280" height="720"></canvas>
     <button id="pauseBtn" aria-label="일시정지">❚❚</button>
@@ -52,7 +49,6 @@
     </div>
   </section>
 
-  <!-- 에디터 -->
   <section id="editor" class="screen">
     <div class="bar">
       <button class="link" data-back>← 뒤로</button>
@@ -90,7 +86,6 @@
     </div>
   </section>
 
-  <!-- 설정 -->
   <section id="settings" class="screen center">
     <h2>설정</h2>
     <div class="row">
@@ -98,13 +93,13 @@
       <div id="keyModes" class="seg"></div>
     </div>
     <div class="row col">
-      <span>키 배치 <small class="dim">칸을 누르고 원하는 키를 누르세요</small></span>
+      <span>키 배치</span>
       <div id="keySlots" class="slots"></div>
       <button id="resetKeys" class="link">기본값으로</button>
     </div>
     <label class="row">스크롤 속도 <span><input id="setSpeed" type="range" min="0.3" max="3" step="0.1"> <b id="speedVal"></b></span></label>
     <label class="row">오디오 오프셋 (ms) <input id="setOffset" type="number"></label>
-    <label class="row">배경 영상 표시 <small class="dim">끄면 더 가벼워져요</small><input id="setBg" type="checkbox"></label>
+    <label class="row">배경 영상 표시<input id="setBg" type="checkbox"></label>
     <label class="row">볼륨 <input id="setVolume" type="range" min="0" max="1" step="0.05"></label>
     <button class="big" data-back>저장하고 돌아가기</button>
   </section>

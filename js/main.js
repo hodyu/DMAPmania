@@ -1,4 +1,3 @@
-// 시작: 메뉴 버튼, 뒤로 가기, 설정, 키보드 연결
 const current = () => document.querySelector('.screen.active')?.id;
 
 document.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => {
@@ -14,10 +13,10 @@ document.querySelectorAll('[data-back]').forEach((b) => (b.onclick = () => {
   if (id === 'settings') { Settings.save(); show('menu'); }
 }));
 
-// ---- 설정 화면: 4~7키 모드, 키마다 따로 지정 ----
+// settings screen
 const Settings = {
   mode: 4,
-  waiting: -1, // 키 입력을 기다리는 칸 번호
+  waiting: -1,
 
   open() {
     this.mode = settings.keyCount;
@@ -36,14 +35,13 @@ const Settings = {
       `<button style="--c:${laneColor(i, this.mode)}" class="${i === this.waiting ? 'wait' : ''}" data-i="${i}">${i === this.waiting ? '?' : keyLabel(code)}</button>`).join('');
   },
 
-  // 키 입력을 가로챘으면 true
   capture(e) {
     if (this.waiting < 0) return false;
     e.preventDefault();
     if (e.code !== 'Escape') {
       const b = settings.binds[this.mode];
       const dup = b.indexOf(e.code);
-      if (dup >= 0) b[dup] = b[this.waiting]; // 이미 쓰는 키면 서로 바꿈
+      if (dup >= 0) b[dup] = b[this.waiting];
       b[this.waiting] = e.code;
     }
     this.waiting = -1;
@@ -75,7 +73,6 @@ $('#resetKeys').onclick = () => {
 };
 $('#setSpeed').oninput = (e) => ($('#speedVal').textContent = e.target.value);
 
-// ---- 키보드 ----
 window.addEventListener('keydown', (e) => {
   const id = current();
   if (id === 'settings' && Settings.capture(e)) return;

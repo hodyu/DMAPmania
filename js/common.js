@@ -1,4 +1,3 @@
-// 공용: 화면 전환, 설정, 채보 저장, 영상
 const $ = (s) => document.querySelector(s);
 const video = $('#video');
 
@@ -7,7 +6,6 @@ function show(id) {
   document.body.classList.toggle('bg-video', id === 'play' && settings.bgVideo);
 }
 
-// 알림 (alert 대신)
 function toast(msg) {
   const t = $('#toast');
   t.textContent = msg;
@@ -16,14 +14,13 @@ function toast(msg) {
   toast.timer = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-// 저장소 (막혀 있어도 게임은 돌아가게)
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
 };
 
-// ---- 설정 ----
-// 키는 e.code 로 저장 (한글 입력 상태에서도 동작)
+// settings
+// e.code 기준 (한글 IME 대응)
 const DEFAULT_BINDS = {
   4: ['KeyD', 'KeyF', 'KeyJ', 'KeyK'],
   5: ['KeyD', 'KeyF', 'Space', 'KeyJ', 'KeyK'],
@@ -40,14 +37,13 @@ function saveSettings() {
 }
 const keyLabel = (code) => code.replace(/^Key|^Digit/, '').replace('Semicolon', ';').replace('Space', '␣');
 
-// 레인 색: 바깥부터 흰색/파랑 번갈아, 홀수 키의 가운데는 노랑 (osu!mania 기본 스킨 느낌)
 function laneColor(i, k) {
   if (k % 2 && i === (k - 1) / 2) return '#ffd36b';
   return Math.min(i, k - 1 - i) % 2 ? '#5ec8ff' : '#f2eefc';
 }
 
-// ---- 채보 ----
-// { keys: 키 수, bpm, offset, notes: [{ t: 시작(ms), l: 레인, d: 길이(ms, 0이면 일반) }] }
+// chart
+// notes: { t: ms, l: lane, d: hold ms }
 function loadChart(song) {
   const saved = store.get('chart:' + song.id);
   if (saved) return Object.assign({ keys: 4 }, JSON.parse(saved));
@@ -58,7 +54,7 @@ function saveChart(song, chart) {
   store.set('chart:' + song.id, JSON.stringify(chart));
 }
 
-// 채보가 없을 때 BPM 박자에 맞춰 자동 생성 (바로 플레이해 볼 수 있게)
+// 채보 없으면 대충 자동 생성
 function autoChart(chart, durationMs) {
   const beat = 60000 / chart.bpm, k = chart.keys;
   const notes = [];
@@ -71,15 +67,13 @@ function autoChart(chart, durationMs) {
   return notes;
 }
 
-// ---- 곡 구간 ----
-// DMAP 곡은 긴 영상의 일부(start~end 초)라서, 게임 안의 시간 0 = 영상의 start 지점
+// DMAP 곡은 긴 영상의 start~end 구간
 const segStart = (song) => (song.start || 0) * 1000;
 const segLength = (song) => (song.end ? (song.end - (song.start || 0)) * 1000 : (video.duration || 0) * 1000);
 const seekSong = (song, ms) => (video.currentTime = (segStart(song) + ms) / 1000);
 const songTime = (song) => video.currentTime * 1000 - segStart(song);
 
-// ---- 영상 불러오기 ----
-// .mp4 는 그대로, .m3u8(국방홍보원 스트림)은 hls.js 로 재생
+// video
 const HLS_JS = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.20/hls.min.js';
 let hls = null;
 function loadScript(src) {

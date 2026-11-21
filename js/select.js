@@ -1,4 +1,3 @@
-// 곡 선택 화면 (플레이 / 에디터 공용)
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const Select = {
   songs: [],
@@ -14,7 +13,7 @@ const Select = {
     if (this.current) this.pick(this.current);
   },
 
-  // 검색: 제목/가수, 초성("ㅇㅇㅈㅇ")도 됨. 곡이 많아도 가볍게 앞 200곡만 그림
+  // 초성 검색 지원, 200곡까지만 렌더
   render() {
     const q = $('#search').value.trim().toLowerCase();
     const hits = this.songs.filter((s) => {
@@ -40,7 +39,6 @@ const Select = {
     const chart = loadChart(song);
     $('#selTitle').textContent = song.title;
     $('#selInfo').textContent = `${song.artist || ''} · ${chart.keys}K · BPM ${chart.bpm} · 노트 ${chart.notes.length || '자동'}`;
-    // 미리보기: 영상을 미리보기 칸 위치에 띄워서 재생
     try {
       await loadVideo(song);
       const r = $('#preview').getBoundingClientRect();
@@ -59,7 +57,7 @@ const Select = {
 
   start() {
     if (!this.current) return toast('곡을 선택하세요');
-    video.play().catch(() => {}); // 모바일(iOS)은 탭할 때 한 번 재생해 둬야 소리가 나옴
+    video.play().catch(() => {});
     this.hidePreview();
     if (this.mode === 'play') Game.start(this.current);
     else Editor.open(this.current);
@@ -68,7 +66,6 @@ const Select = {
 
 $('#search').oninput = () => Select.render();
 $('#startBtn').onclick = () => Select.start();
-// 컴퓨터의 db.js 여러 개를 한 번에 추가
 $('#dbFiles').onchange = async (e) => {
   if (!e.target.files.length) return;
   const { added, saved } = await importDbFiles(e.target.files);
