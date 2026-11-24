@@ -29,7 +29,7 @@ const Game = (() => {
       const notes = (chart.notes.length ? chart.notes : autoChart(chart, segLength(s)))
         .filter((n) => n.t >= from && n.l < keys).sort((a, b) => a.t - b.t);
       lanes = colors.map((_, l) => notes.filter((n) => n.l === l));
-      total = notes.length;
+      total = notes.length + notes.filter((n) => n.d > 0).length; // 롱노트는 머리 + 꼬리 두 번 판정
       endTime = Math.min(total ? Math.max(...notes.map((n) => n.t + n.d)) + 1500 : Infinity, segLength(s) + 300);
       next = Array(keys).fill(0);
       holds = Array(keys).fill(null);
@@ -50,7 +50,7 @@ const Game = (() => {
     const p = performance.now();
     if (!started) return (opts.from || 0) - (startAt - p);
     const media = songTime(song);
-    if (!clock || video.paused) clock = { media, p };
+    if (!clock || !videoRunning) clock = { media, p }; // 영상이 멈춰 있으면 시간도 멈춤
     let t = clock.media + (p - clock.p) * video.playbackRate;
     if (Math.abs(t - media) > 60) { clock = { media, p }; t = media; }
     return t - settings.offset;
@@ -84,7 +84,9 @@ const Game = (() => {
     pressed[l] = false;
     const n = holds[l];
     holds[l] = null;
-    if (n && now() < n.t + n.d - MISS) miss(); // 롱노트를 너무 일찍 뗌
+    if (!n) return;
+    const err = now() - (n.t + n.d); // 롱노트 꼬리: 뗀 시간으로 판정, 너무 일찍 떼면 MISS
+    err < -MISS ? miss() : hit(Math.min(0, err));
   }
 
   function loop(run) {
@@ -93,8 +95,11 @@ const Game = (() => {
       if (!started && performance.now() >= startAt) { started = true; video.play(); }
       const t = now();
       for (let l = 0; l < keys; l++) {
-        while (next[l] < lanes[l].length && t - lanes[l][next[l]].t > MISS) { next[l]++; miss(); }
-        if (holds[l] && t >= holds[l].t + holds[l].d) holds[l] = null;
+        while (next[l] < lanes[l].length && t - lanes[l][next[l]].t > MISS) {
+          if (lanes[l][next[l]++].d > 0) miss(); // 롱노트 머리를 놓치면 꼬리도 MISS
+          miss();
+        }
+        if (holds[l] && t >= holds[l].t + holds[l].d) { holds[l] = null; hit(0); } // 끝까지 누르고 있으면 꼬리 성공
       }
       draw(t);
       if (hp <= 0 && !opts.onExit) return finish(true); // 체력 0 = 실패 (에디터 테스트는 제외)
@@ -149,9 +154,9 @@ const Game = (() => {
     }
 
     // 체력
-    const hx = left + stageW + 10, hh = JUDGE_Y - 80;
+    const hx = left + stageW + 10, hh = JUDGE_Y - 120; // 위쪽은 점수 글자 자리
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
-    ctx.fillRect(hx, 80, 8, hh);
+    ctx.fillRect(hx, 120, 8, hh);
     ctx.fillStyle = hp > 0.3 ? '#7be38a' : '#ff6b6b';
     ctx.fillRect(hx, JUDGE_Y - hh * hp, 8, hh * hp);
 
@@ -205,7 +210,7 @@ const Game = (() => {
   function pause() {
     paused = true;
     video.pause();
-    pressed.fill(false); holds.fill(null); touches.clear();
+    pressed.fill(false); touches.clear();
     $('#pause').classList.remove('hidden');
   }
   function resume() {

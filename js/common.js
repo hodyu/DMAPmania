@@ -180,6 +180,11 @@ function loadVideo(song) {
   });
 }
 
+// 영상이 실제로 흘러가는 중인지 (play() 직후나 버퍼링 중엔 currentTime 이 멈춰 있음)
+let videoRunning = false;
+video.addEventListener('playing', () => (videoRunning = true));
+for (const type of ['pause', 'waiting', 'seeking', 'ended', 'emptied']) video.addEventListener(type, () => (videoRunning = false));
+
 const fmt = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');

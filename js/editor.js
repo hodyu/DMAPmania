@@ -108,7 +108,7 @@ const Editor = (() => {
   function tick(id) {
     if (!playing || id !== loopId) return;
     const media = songTime(song), p = performance.now();
-    if (!clock || Math.abs(clock.media + (p - clock.p) - media) > 80) clock = { media, p };
+    if (!clock || !videoRunning || Math.abs(clock.media + (p - clock.p) - media) > 80) clock = { media, p };
     cur = Math.min(clock.media + (p - clock.p), duration());
     if (video.ended || cur >= duration()) toggle();
     draw();
