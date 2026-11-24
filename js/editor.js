@@ -238,10 +238,6 @@ const Editor = (() => {
     rate();
   }
   $('#edShift').onchange = (e) => setShift(Number(e.target.value) || 0);
-  $('#edShiftHere').onclick = () => {
-    if (playing) toggle();
-    setShift(Number($('#edShift').value) + cur);
-  };
   $('#edSnap').onchange = draw;
   $('#edKeys').onchange = (e) => {
     chart.keys = Number(e.target.value);
