@@ -2,14 +2,13 @@ const Game = (() => {
   const cv = $('#playCanvas');
   const ctx = cv.getContext('2d');
   const W = 1280, H = 720, JUDGE_Y = 600;
-  const touchMode = matchMedia('(pointer: coarse)').matches;
   // [판정 범위(ms), 이름, 점수, 색]
   const J = [[16, 'MAX', 300, '#ffffff'], [40, '300', 300, '#ffd36b'], [73, '200', 200, '#7be38a'],
              [103, '100', 100, '#5ec8ff'], [127, '50', 50, '#c9a7ff']];
   const MISS = 164;
   const RESULT_NAMES = ['MAX', '300', '200', '100', '50', 'MISS'];
 
-  let song, opts, chart, diffName, keys, COL, left, total, binds, colors, runId = 0, paused, startAt, started;
+  let song, opts, chart, keys, COL, left, total, binds, colors, runId = 0, paused, startAt, started;
   let lanes, next, holds, pressed, flash, stats, last, errors, hp, endTime, clock;
 
   function start(s, o = {}) {
@@ -17,7 +16,6 @@ const Game = (() => {
     const run = ++runId; // 이전 루프는 runId 가 달라져서 멈춤
     chart = o.chart || loadCharts(s)[0];
     const from = o.from || 0;
-    diffName = chart.name + " " + starText(chart);
     keys = chart.keys;
     binds = settings.binds[keys];
     COL = Math.min(settings.laneWidth, Math.floor(1100 / keys)); // 화면(1280) 밖으로 나가지 않게
@@ -198,14 +196,6 @@ const Game = (() => {
     ctx.fillText(String(score()).padStart(7, '0'), W - 28, 58);
     ctx.font = '600 24px sans-serif';
     ctx.fillText(acc().toFixed(2) + '%', W - 28, 92);
-
-    // 곡 정보
-    ctx.textAlign = 'left';
-    ctx.font = '700 18px sans-serif';
-    ctx.fillText(song.title, 24, 40);
-    ctx.font = '13px sans-serif';
-    ctx.fillStyle = '#888888';
-    ctx.fillText(`${diffName} · ${keys}K · 속도 ${settings.speed} · 오프셋 ${settings.offset}ms${touchMode ? '' : ' · Esc 일시정지 · -/= 오프셋'}`, 24, 62);
   }
 
   const judged = () => stats.count.reduce((a, b) => a + b, 0);
