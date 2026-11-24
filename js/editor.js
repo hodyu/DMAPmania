@@ -181,10 +181,9 @@ const Editor = (() => {
   // 난이도
   function selectDiff(i) {
     chart = charts[i];
-    $('#edDiff').innerHTML = charts.map((c, j) => `<option value="${j}">${esc(diffLabel(c))}</option>`).join('');
+    $('#edDiff').innerHTML = charts.map((c, j) => `<option value="${j}">${esc(c.name)}</option>`).join('');
     $('#edDiff').value = i;
     $('#edDiffName').value = chart.name;
-    $('#edLevel').value = chart.level;
     $('#edBpm').value = chart.bpm;
     $('#edOffset').value = chart.offset;
     $('#edKeys').value = chart.keys;
@@ -200,19 +199,16 @@ const Editor = (() => {
     return result;
   }
   $('#edDiffName').onchange = (e) => { chart.name = uniqueName(e.target.value, chart); refreshDiffs(); };
-  $('#edLevel').onchange = (e) => { chart.level = Math.max(1, Math.round(e.target.value) || 1); refreshDiffs(); };
   $('#edDiffAdd').onclick = () => {
     const c = newChart(song, chart);
     c.id = Date.now().toString(36);
     c.name = uniqueName(DIFF_NAMES[charts.length] || 'Extra', c);
-    c.level = Math.max(...charts.map((x) => x.level)) + 1;
     charts.push(c);
     selectDiff(charts.length - 1);
   };
-  $('#edAutoLevel').onclick = () => { chart.level = Math.max(1, Math.round(stars)); refreshDiffs(); };
   $('#edDiffDel').onclick = () => {
     if (charts.length < 2) return toast('난이도가 하나뿐이라 지울 수 없습니다');
-    if (!confirm(`${diffLabel(chart)} 을(를) 지울까요?`)) return;
+    if (!confirm(`${chart.name} 을(를) 지울까요?`)) return;
     charts.splice(charts.indexOf(chart), 1);
     save();
     selectDiff(0);

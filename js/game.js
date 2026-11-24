@@ -17,7 +17,7 @@ const Game = (() => {
     const run = ++runId; // 이전 루프는 runId 가 달라져서 멈춤
     chart = o.chart || loadCharts(s)[0];
     const from = o.from || 0;
-    diffName = diffLabel(chart) + " " + starText(chart);
+    diffName = chart.name + " " + starText(chart);
     keys = chart.keys;
     binds = settings.binds[keys];
     COL = Math.min(settings.laneWidth, Math.floor(1100 / keys)); // 화면(1280) 밖으로 나가지 않게

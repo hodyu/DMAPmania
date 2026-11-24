@@ -45,12 +45,12 @@ function laneColor(i, k) {
   return Math.min(i, k - 1 - i) % 2 ? '#5ec8ff' : '#eeeeee';
 }
 
-// chart: 곡마다 난이도 배열 [{ name, level, keys, bpm, offset, notes: [{ t: ms, l: lane, d: hold ms }] }]
+// chart: 곡마다 난이도 배열 [{ name, keys, bpm, offset, notes: [{ t: ms, l: lane, d: hold ms }] }]
 const DIFF_NAMES = ['Normal', 'Hard', 'Insane', 'Expert'];
 const LV_COLORS = ['#6ec6ff', '#6ee7a8', '#e8e36a', '#ffb35c', '#ff6b6b', '#c78bff'];
 
 function newChart(song, base = {}) {
-  return { id: 'default', name: 'Normal', level: 1, keys: base.keys || settings.keyCount, bpm: base.bpm || song.bpm || 120, offset: base.offset || 0, notes: [] };
+  return { id: 'default', name: 'Normal', keys: base.keys || settings.keyCount, bpm: base.bpm || song.bpm || 120, offset: base.offset || 0, notes: [] };
 }
 
 // ---- 채보 파일: 게임 폴더/charts/{곡 id}/{난이도 이름}.js ----
@@ -69,7 +69,7 @@ const chartsReady = Promise.all((typeof CHART_FILES === 'undefined' ? [] : CHART
   document.head.appendChild(script);
 }))).then(() => {
   for (const c of CHARTS) (chartStore[c.song] ||= []).push(c);
-  for (const list of Object.values(chartStore)) list.sort((a, b) => a.level - b.level);
+  for (const list of Object.values(chartStore)) list.sort((a, b) => chartStars(a) - chartStars(b)); // 쉬운 난이도부터
 });
 
 // 편집용 복사본을 돌려줌 (저장 전까지 원본은 그대로)
@@ -150,8 +150,6 @@ function timeAgo(at) {
   if (m < 1440) return Math.floor(m / 60) + '시간 전';
   return Math.floor(m / 1440) + '일 전';
 }
-const diffLabel = (c) => `${c.name} Lv.${c.level}`;
-const levelColor = (lv) => LV_COLORS[Math.min(LV_COLORS.length - 1, Math.floor((lv - 1) / 2))];
 const starColor = (stars) => LV_COLORS[Math.min(LV_COLORS.length - 1, Math.floor(stars / 1.5))];
 
 // 채보가 비어 있으면 박자에 맞춰 대충 생성

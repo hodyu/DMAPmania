@@ -43,7 +43,7 @@ const Select = {
       const diffs = open ? charts.map((c, d) => {
         const stars = chartStars(c);
         return `<li class="diff ${d === this.diff ? 'on' : ''}" data-d="${d}" style="--c:${starColor(stars)}">
-          <span class="star">${starText(c)}</span><b>${esc(c.name)}</b><small>Lv.${c.level} · ${c.keys}K</small></li>`;
+          <span class="star">${starText(c)}</span><b>${esc(c.name)}</b><small>${c.keys}K</small></li>`;
       }).join('') : '';
       return `<li class="song ${open ? 'sel' : ''}" data-i="${i}">
         <b>${s.isNew ? '<em>NEW</em>' : ''}${esc(s.title)}</b>
@@ -86,7 +86,7 @@ const Select = {
     $('#selTitle').textContent = song.title;
     $('#selArtist').textContent = song.artist || '';
     $('#selDiff').innerHTML = `<span class="star" style="--c:${starColor(chartStars(chart))}">${starText(chart)}</span>
-      <b>${esc(chart.name)}</b> <small>Lv.${chart.level}</small>`;
+      <b>${esc(chart.name)}</b>`;
     const stat = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
     $('#selStats').innerHTML = stat('길이', len ? fmt(len) : '-') + stat('BPM', chart.bpm) +
       stat('노트', chart.notes.length || '자동') + stat('키', chart.keys + 'K');
