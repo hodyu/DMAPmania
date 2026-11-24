@@ -22,7 +22,9 @@ const Settings = {
     $('#setSpeed').value = $('#speedVal').textContent = settings.speed;
     $('#setOffset').value = settings.offset;
     $('#setVolume').value = settings.volume;
-    $('#setBg').checked = settings.bgVideo;
+    $('#setLane').value = $('#laneVal').textContent = settings.laneWidth;
+    $('#setBg').value = settings.bgBrightness;
+    $('#bgVal').textContent = bgText(settings.bgBrightness);
     $('#dbCount').textContent = `저장된 곡 ${store.get('dbSongs', []).length}개`;
     this.render();
     show('settings');
@@ -52,7 +54,8 @@ const Settings = {
     settings.speed = Number($('#setSpeed').value);
     settings.offset = Number($('#setOffset').value) || 0;
     settings.volume = Number($('#setVolume').value);
-    settings.bgVideo = $('#setBg').checked;
+    settings.laneWidth = Number($('#setLane').value);
+    settings.bgBrightness = Number($('#setBg').value);
     saveSettings();
   },
 };
@@ -76,6 +79,9 @@ $('#dbFiles').onchange = async (e) => {
   e.target.value = '';
 };
 $('#setSpeed').oninput = (e) => ($('#speedVal').textContent = e.target.value);
+$('#setLane').oninput = (e) => ($('#laneVal').textContent = e.target.value);
+const bgText = (v) => (Number(v) ? Math.round(v * 100) + '%' : '끔');
+$('#setBg').oninput = (e) => ($('#bgVal').textContent = bgText(e.target.value));
 
 const SELECT_KEYS = {
   ArrowDown: () => Select.move(1),

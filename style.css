@@ -31,7 +31,7 @@ button:hover { border-color: #555; }
 /* 영상: 곡 선택/플레이 때 배경으로 */
 #video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; opacity: 0; transition: opacity .4s; }
 body.bg-select #video { opacity: .45; }
-body.bg-video #video { opacity: .3; }
+body.bg-video #video { opacity: var(--bg-brightness); }
 
 /* 메뉴 */
 #menu { background: radial-gradient(ellipse at 50% 40%, #1b1b1b, #000 70%); }

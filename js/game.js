@@ -2,7 +2,7 @@ const Game = (() => {
   const cv = $('#playCanvas');
   const ctx = cv.getContext('2d');
   const W = 1280, H = 720, JUDGE_Y = 600;
-  const touchMode = matchMedia('(pointer: coarse)').matches; // 터치 기기는 레인을 넓게
+  const touchMode = matchMedia('(pointer: coarse)').matches;
   // [판정 범위(ms), 이름, 점수, 색]
   const J = [[16, 'MAX', 300, '#ffffff'], [40, '300', 300, '#ffd36b'], [73, '200', 200, '#7be38a'],
              [103, '100', 100, '#5ec8ff'], [127, '50', 50, '#c9a7ff']];
@@ -20,7 +20,7 @@ const Game = (() => {
     diffName = diffLabel(chart) + " " + starText(chart);
     keys = chart.keys;
     binds = settings.binds[keys];
-    COL = touchMode ? Math.min(150, Math.floor(1100 / keys)) : 76;
+    COL = Math.min(settings.laneWidth, Math.floor(1100 / keys)); // 화면(1280) 밖으로 나가지 않게
     left = (W - COL * keys) / 2;
     colors = binds.map((_, i) => laneColor(i, keys));
     show('play');

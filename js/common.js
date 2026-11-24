@@ -3,7 +3,7 @@ const video = $('#video');
 
 function show(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
-  document.body.classList.toggle('bg-video', id === 'play' && settings.bgVideo);
+  document.body.classList.toggle('bg-video', id === 'play' && settings.bgBrightness > 0);
   document.body.classList.toggle('bg-select', id === 'select');
 }
 
@@ -30,12 +30,13 @@ const DEFAULT_BINDS = {
   7: ['KeyS', 'KeyD', 'KeyF', 'Space', 'KeyJ', 'KeyK', 'KeyL'],
 };
 const settings = Object.assign(
-  { speed: 1, offset: 0, volume: 0.8, bgVideo: true, keyCount: 4, binds: structuredClone(DEFAULT_BINDS) },
+  { speed: 1, offset: 0, volume: 0.8, bgBrightness: 0.3, laneWidth: 76, keyCount: 4, binds: structuredClone(DEFAULT_BINDS) },
   store.get('settings', {})
 );
 function saveSettings() {
   store.set('settings', settings);
   video.volume = settings.volume;
+  document.body.style.setProperty('--bg-brightness', settings.bgBrightness);
 }
 const keyLabel = (code) => code.replace(/^Key|^Digit/, '').replace('Space', '␣');
 
