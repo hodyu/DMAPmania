@@ -4,13 +4,13 @@ const Editor = (() => {
   const LANE_X = 10, STAGE_W = 400, HEAD_Y = 440, ZOOM = 0.3; // px / ms
   let song, charts, chart, stars = 0, cur = 0, tool = 'note', drag = null, press = null, playing = false, clock = null, loopId = 0;
 
-  function open(s, idx = 0) {
+  function open(s, chartId) {
     if (song?.id !== s.id) cur = 0;
     song = s;
     charts = loadCharts(s);
     $('#edTitle').textContent = s.title;
     show('editor');
-    selectDiff(Math.min(idx, charts.length - 1));
+    selectDiff(Math.max(0, charts.findIndex((c) => c.id === chartId)));
     loadVideo(s).then(() => { seekSong(song, cur); draw(); }).catch((e) => toast(e.message));
   }
 
@@ -228,8 +228,7 @@ const Editor = (() => {
   $('#edTest').onclick = () => {
     if (playing) toggle();
     saveCharts(song, charts);
-    const idx = charts.indexOf(chart);
-    Game.start(song, { chart, from: Math.max(0, cur - 1000), onExit: () => open(song, idx) });
+    Game.start(song, { chart, from: Math.max(0, cur - 1000), onExit: () => open(song, chart.id) });
   };
 
   function onKey(e) {
@@ -237,5 +236,7 @@ const Editor = (() => {
   }
   const close = () => playing && toggle();
 
-  return { open, onKey, close };
+  const addDiff = () => $('#edDiffAdd').click();
+
+  return { open, onKey, close, addDiff };
 })();

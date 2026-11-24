@@ -8,7 +8,7 @@ document.querySelectorAll('[data-go]').forEach((b) => (b.onclick = () => {
 function goBack() {
   const id = current();
   if (id === 'select') { video.pause(); show('menu'); }
-  if (id === 'editor') { Editor.close(); Select.open('edit'); }
+  if (id === 'editor') { Editor.close(); Select.open(Select.mode); }
   if (id === 'settings') { Settings.save(); show('menu'); }
 }
 document.querySelectorAll('[data-back]').forEach((b) => (b.onclick = goBack));

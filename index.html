@@ -14,7 +14,7 @@
     <h1 class="logo">DMAPmania</h1>
     <nav class="menu-nav">
       <button data-go="play" data-key="KeyP">플레이 <kbd>P</kbd></button>
-      <button data-go="edit" data-key="KeyE">에디터 <kbd>E</kbd></button>
+      <button data-go="edit" data-key="KeyE">DB에서 곡 추가 <kbd>E</kbd></button>
       <button data-go="settings" data-key="KeyS">설정 <kbd>S</kbd></button>
     </nav>
   </section>
@@ -37,6 +37,10 @@
       <span id="songCount" class="grow"></span>
       <button id="startBtn">시작</button>
     </footer>
+    <div id="ctxMenu" class="ctx hidden">
+      <button data-act="add">난이도 추가하기</button>
+      <button data-act="edit">에디터에서 열기</button>
+    </div>
   </section>
 
   <section id="play" class="screen">
