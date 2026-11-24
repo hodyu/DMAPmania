@@ -59,6 +59,8 @@
     <div class="bar">
       <button class="link" data-back>← 뒤로</button>
       <b id="edTitle" class="grow"></b>
+      <button id="edUndo" title="Ctrl+Z">되돌리기</button>
+      <button id="edRedo" title="Ctrl+Y">다시 하기</button>
       <button id="edSave">저장</button>
       <button id="edTest" class="accent">테스트 플레이</button>
     </div>
@@ -82,7 +84,7 @@
           <label>BPM <input id="edBpm" type="number" step="0.01"></label>
           <label>오프셋 (ms) <input id="edOffset" type="number"></label>
         </div>
-        <p class="dim">클릭: 노트 · 드래그(롱노트 도구): 롱노트<br>우클릭: 삭제 · 휠: 이동 · Space: 재생/정지</p>
+        <p class="dim">클릭: 노트 · 드래그(롱노트 도구): 롱노트<br>우클릭: 삭제 · 휠: 이동 · Space: 재생/정지<br>Ctrl+Z: 되돌리기 · Ctrl+Y: 다시 하기</p>
         <p id="edCount" class="dim"></p>
       </div>
     </div>

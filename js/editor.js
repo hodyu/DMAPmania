@@ -4,8 +4,9 @@ const Editor = (() => {
   const LANE_X = 10, STAGE_W = 400, HEAD_Y = 440, ZOOM = 0.3; // px / ms
   let song, charts, chart, stars = 0, cur = 0, tool = 'note', drag = null, press = null, playing = false, clock = null, loopId = 0;
 
-  function open(s, chartId) {
+  function open(s, chartId, keepHistory) {
     if (song?.id !== s.id) cur = 0;
+    if (!keepHistory) { undoStack = []; redoStack = []; }
     song = s;
     charts = loadCharts(s);
     $('#edTitle').textContent = s.title;
@@ -13,6 +14,24 @@ const Editor = (() => {
     selectDiff(Math.max(0, charts.findIndex((c) => c.id === chartId)));
     loadVideo(s).then(() => { seekSong(song, cur); draw(); }).catch((e) => toast(e.message));
   }
+
+  // 되돌리기: 바꾸기 직전 상태(모든 난이도)를 통째로 쌓아 둠
+  let undoStack = [], redoStack = [];
+  const snapshot = () => JSON.stringify({ charts, i: charts.indexOf(chart) });
+  function remember() {
+    undoStack.push(snapshot());
+    if (undoStack.length > 200) undoStack.shift();
+    redoStack = [];
+  }
+  function restore(from, to, msg) {
+    if (!from.length) return toast(msg);
+    to.push(snapshot());
+    const s = JSON.parse(from.pop());
+    charts = s.charts;
+    selectDiff(s.i);
+  }
+  const undo = () => restore(undoStack, redoStack, '되돌릴 것이 없습니다');
+  const redo = () => restore(redoStack, undoStack, '다시 할 것이 없습니다');
 
   const laneW = () => STAGE_W / chart.keys;
   const snapMs = () => 60000 / chart.bpm / Number($('#edSnap').value);
@@ -40,7 +59,7 @@ const Editor = (() => {
     cv.setPointerCapture(e.pointerId);
     if (e.button === 2 || tool === 'erase') {
       const n = noteAt(p);
-      chart.notes = chart.notes.filter((x) => x !== n);
+      if (n) { remember(); chart.notes = chart.notes.filter((x) => x !== n); }
       rate();
     } else if (tool === 'long') {
       const t = snap(p.t);
@@ -59,8 +78,8 @@ const Editor = (() => {
   };
   cv.onpointerup = cv.onpointercancel = (e) => {
     if (e.type === 'pointerup') {
-      if (drag) chart.notes.push(drag);
-      else if (press && !press.moved && !noteAt(press)) chart.notes.push({ t: press.t, l: press.l, d: 0 });
+      if (drag) { remember(); chart.notes.push(drag); }
+      else if (press && !press.moved && !noteAt(press)) { remember(); chart.notes.push({ t: press.t, l: press.l, d: 0 }); }
     }
     drag = press = null;
     rate();
@@ -196,8 +215,9 @@ const Editor = (() => {
     for (let n = 2; charts.some((c) => c !== self && c.name === result); n++) result = `${base} ${n}`;
     return result;
   }
-  $('#edDiffName').onchange = (e) => { chart.name = uniqueName(e.target.value, chart); refreshDiffs(); };
+  $('#edDiffName').onchange = (e) => { remember(); chart.name = uniqueName(e.target.value, chart); refreshDiffs(); };
   $('#edDiffAdd').onclick = () => {
+    remember();
     const c = newChart(song, chart);
     c.id = Date.now().toString(36);
     c.name = uniqueName(DIFF_NAMES[charts.length] || 'Extra', c);
@@ -207,6 +227,7 @@ const Editor = (() => {
   $('#edDiffDel').onclick = () => {
     if (charts.length < 2) return toast('난이도가 하나뿐이라 지울 수 없습니다');
     if (!confirm(`${chart.name} 을(를) 지울까요?`)) return;
+    remember();
     charts.splice(charts.indexOf(chart), 1);
     save();
     selectDiff(0);
@@ -216,11 +237,12 @@ const Editor = (() => {
     tool = b.dataset.tool;
     document.querySelectorAll('[data-tool]').forEach((x) => x.classList.toggle('on', x === b));
   }));
-  $('#edBpm').onchange = (e) => { chart.bpm = Number(e.target.value) || 120; draw(); };
-  $('#edOffset').onchange = (e) => { chart.offset = Number(e.target.value) || 0; draw(); };
+  $('#edBpm').onchange = (e) => { remember(); chart.bpm = Number(e.target.value) || 120; draw(); };
+  $('#edOffset').onchange = (e) => { remember(); chart.offset = Number(e.target.value) || 0; draw(); };
 
   $('#edSnap').onchange = draw;
   $('#edKeys').onchange = (e) => {
+    remember();
     chart.keys = Number(e.target.value);
     const before = chart.notes.length;
     chart.notes = chart.notes.filter((n) => n.l < chart.keys);
@@ -235,12 +257,18 @@ const Editor = (() => {
   $('#edTest').onclick = () => {
     if (playing) toggle();
     save();
-    Game.start(song, { chart, from: Math.max(0, cur - 1000), onExit: () => open(song, chart.id) });
+    Game.start(song, { chart, from: Math.max(0, cur - 1000), onExit: () => open(song, chart.id, true) });
   };
 
+  // Space: 재생/정지, Ctrl+Z: 되돌리기, Ctrl+Y 또는 Ctrl+Shift+Z: 다시 하기
   function onKey(e) {
-    if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); toggle(); }
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyZ') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyY') { e.preventDefault(); redo(); }
   }
+  $('#edUndo').onclick = undo;
+  $('#edRedo').onclick = redo;
   const close = () => playing && toggle();
 
   const addDiff = () => $('#edDiffAdd').click();
