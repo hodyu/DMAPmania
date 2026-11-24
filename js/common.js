@@ -51,23 +51,88 @@ const LV_COLORS = ['#6ec6ff', '#6ee7a8', '#e8e36a', '#ffb35c', '#ff6b6b', '#c78b
 function newChart(song, base = {}) {
   return { id: 'default', name: 'Normal', level: 1, keys: base.keys || settings.keyCount, bpm: base.bpm || song.bpm || 120, offset: base.offset || 0, notes: [] };
 }
+
+// ---- 채보 파일: 게임 폴더/charts/{곡 id}/{난이도 이름}.js ----
+// 읽기: charts/index.js 의 CHART_FILES 목록을 <script> 로 읽음 (file:// 에서도 됨)
+//       각 파일은 CHARTS.push({...}) 한 줄
+// 쓰기: 크롬 폴더 접근 기능(showDirectoryPicker). 처음 저장할 때 게임 폴더를 한 번 고름
+const CHARTS = [];
+const chartStore = {}; // 곡 id → 난이도 배열
+const songKey = (song) => song.id.replace(/^dmap:/, '');
+const fileName = (chart) => chart.name + '.js';
+
+const chartsReady = Promise.all((typeof CHART_FILES === 'undefined' ? [] : CHART_FILES).map((file) => new Promise((done) => {
+  const script = document.createElement('script');
+  script.src = 'charts/' + file;
+  script.onload = script.onerror = done;
+  document.head.appendChild(script);
+}))).then(() => {
+  for (const c of CHARTS) (chartStore[c.song] ||= []).push(c);
+  for (const list of Object.values(chartStore)) list.sort((a, b) => a.level - b.level);
+});
+
+// 편집용 복사본을 돌려줌 (저장 전까지 원본은 그대로)
 function loadCharts(song) {
-  const charts = store.get('charts:' + song.id, null) || [newChart(song)];
-  charts.forEach((c) => (c.id ||= c.name)); // 랭킹을 난이도 id 로 저장하므로 id 가 없으면 이름으로
+  const charts = structuredClone(chartStore[songKey(song)] || [newChart(song)]);
+  charts.forEach((c) => (c.id ||= c.name));
   return charts;
 }
+
 // 채보(키 수, 노트)가 바뀐 난이도와 지워진 난이도는 랭킹을 초기화
 const chartShape = (c) => JSON.stringify([c.keys, c.notes]);
-function saveCharts(song, charts) {
-  const before = loadCharts(song);
+async function saveCharts(song, charts) {
+  const key = songKey(song), before = chartStore[key] || [];
   for (const c of charts) {
+    c.song = key;
     c.notes.sort((a, b) => a.t - b.t);
     c.stars = starRating(c.notes, c.keys); // 목록에서 매번 계산하지 않게 저장해 둠
     const old = before.find((o) => o.id === c.id);
     if (old && chartShape(old) !== chartShape(c)) store.remove(scoreKey(song, c));
   }
   for (const old of before) if (!charts.some((c) => c.id === old.id)) store.remove(scoreKey(song, old));
-  store.set('charts:' + song.id, charts);
+  chartStore[key] = structuredClone(charts);
+  await writeChartFiles(key, before, charts);
+}
+
+// 폴더 연결: 고른 폴더(핸들)를 IndexedDB 에 기억해 두고, 다음부터는 허락만 다시 받음
+function idb(mode, action) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open('dmapmania', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('kv');
+    open.onerror = reject;
+    open.onsuccess = () => {
+      const req = action(open.result.transaction('kv', mode).objectStore('kv'));
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = reject;
+    };
+  });
+}
+let gameDir = null;
+idb('readonly', (kv) => kv.get('gameDir')).then((dir) => (gameDir = dir || null)).catch(() => {});
+
+async function getGameDir() {
+  if (gameDir && (await gameDir.requestPermission({ mode: 'readwrite' })) === 'granted') return gameDir;
+  toast('게임 폴더(index.html 이 있는 폴더)를 선택하세요');
+  const dir = await showDirectoryPicker({ mode: 'readwrite' });
+  await dir.getFileHandle('index.html').catch(() => { throw new Error('index.html 이 있는 게임 폴더를 골라 주세요'); });
+  await idb('readwrite', (kv) => kv.put(dir, 'gameDir'));
+  return (gameDir = dir);
+}
+async function writeFile(dir, name, text) {
+  const writer = await (await dir.getFileHandle(name, { create: true })).createWritable();
+  await writer.write(text);
+  await writer.close();
+}
+async function writeChartFiles(key, before, charts) {
+  const chartsDir = await (await getGameDir()).getDirectoryHandle('charts', { create: true });
+  const songDir = await chartsDir.getDirectoryHandle(key, { create: true });
+  for (const old of before) {
+    if (!charts.some((c) => fileName(c) === fileName(old))) await songDir.removeEntry(fileName(old)).catch(() => {});
+  }
+  for (const c of charts) await writeFile(songDir, fileName(c), `CHARTS.push(${JSON.stringify(c)});\n`);
+  // 목록 파일 다시 쓰기
+  const files = Object.entries(chartStore).flatMap(([k, list]) => list.map((c) => `  '${k}/${fileName(c)}',`));
+  await writeFile(chartsDir, 'index.js', `const CHART_FILES = [\n${files.join('\n')}\n];\n`);
 }
 
 // 랭킹: 곡+난이도마다 점수 상위 20개

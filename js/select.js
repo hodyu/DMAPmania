@@ -7,7 +7,8 @@ const Select = {
   mode: 'play', // 'play' | 'edit'
 
   // play: 채보(노트)가 있는 곡과 난이도만 / edit: DB 전체 곡
-  open(mode) {
+  async open(mode) {
+    await chartsReady;
     this.mode = mode;
     $('#startBtn').textContent = mode === 'play' ? '시작' : '채보 만들기';
     if (!this.songs.length) this.songs = loadSongs();

@@ -190,12 +190,19 @@ const Editor = (() => {
   }
   const refreshDiffs = () => selectDiff(charts.indexOf(chart));
   $('#edDiff').onchange = (e) => selectDiff(Number(e.target.value));
-  $('#edDiffName').onchange = (e) => { chart.name = e.target.value.trim() || 'Normal'; refreshDiffs(); };
+  // 난이도 이름 = 파일 이름이라 쓸 수 없는 글자는 _ 로, 겹치면 뒤에 숫자
+  function uniqueName(name, self) {
+    const base = name.replace(/[\\/:*?"<>|]/g, '_').trim() || 'Normal';
+    let result = base;
+    for (let n = 2; charts.some((c) => c !== self && c.name === result); n++) result = `${base} ${n}`;
+    return result;
+  }
+  $('#edDiffName').onchange = (e) => { chart.name = uniqueName(e.target.value, chart); refreshDiffs(); };
   $('#edLevel').onchange = (e) => { chart.level = Math.max(1, Math.round(e.target.value) || 1); refreshDiffs(); };
   $('#edDiffAdd').onclick = () => {
     const c = newChart(song, chart);
     c.id = Date.now().toString(36);
-    c.name = DIFF_NAMES[charts.length] || 'Extra ' + charts.length;
+    c.name = uniqueName(DIFF_NAMES[charts.length] || 'Extra', c);
     c.level = Math.max(...charts.map((x) => x.level)) + 1;
     charts.push(c);
     selectDiff(charts.length - 1);
@@ -205,7 +212,7 @@ const Editor = (() => {
     if (charts.length < 2) return toast('난이도가 하나뿐이라 지울 수 없습니다');
     if (!confirm(`${diffLabel(chart)} 을(를) 지울까요?`)) return;
     charts.splice(charts.indexOf(chart), 1);
-    saveCharts(song, charts);
+    save();
     selectDiff(0);
   };
 
@@ -224,10 +231,13 @@ const Editor = (() => {
     rate();
   };
   $('#edPlay').onclick = toggle;
-  $('#edSave').onclick = () => { saveCharts(song, charts); toast('저장했습니다'); };
+  const save = () => saveCharts(song, charts)
+    .then(() => toast('저장했습니다'))
+    .catch((e) => toast('파일 저장 실패: ' + e.message));
+  $('#edSave').onclick = save;
   $('#edTest').onclick = () => {
     if (playing) toggle();
-    saveCharts(song, charts);
+    save();
     Game.start(song, { chart, from: Math.max(0, cur - 1000), onExit: () => open(song, chart.id) });
   };
 
