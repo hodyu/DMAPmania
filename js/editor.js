@@ -7,9 +7,7 @@ const Editor = (() => {
   function open(s, chartId) {
     if (song?.id !== s.id) cur = 0;
     song = s;
-    delete song.shift; // 저장 안 한 보정값은 버림
     charts = loadCharts(s);
-    $('#edShift').value = segStart(song) - (song.start || 0) * 1000;
     $('#edTitle').textContent = s.title;
     show('editor');
     selectDiff(Math.max(0, charts.findIndex((c) => c.id === chartId)));
@@ -221,23 +219,6 @@ const Editor = (() => {
   $('#edBpm').onchange = (e) => { chart.bpm = Number(e.target.value) || 120; draw(); };
   $('#edOffset').onchange = (e) => { chart.offset = Number(e.target.value) || 0; draw(); };
 
-  // 곡 시작 보정: 0초 위치를 옮겨도 노트와 박자선은 음악에 붙어 있도록 같이 당김
-  function setShift(shift) {
-    const delta = Math.round(shift) - (segStart(song) - (song.start || 0) * 1000);
-    if (!delta) return;
-    song.shift = Math.round(shift);
-    for (const c of charts) {
-      c.notes.forEach((n) => (n.t -= delta));
-      c.offset -= delta;
-    }
-    const early = chart.notes.filter((n) => n.t < 0).length;
-    if (early) toast(`곡 시작보다 앞에 있는 노트가 ${early}개 있습니다`);
-    $('#edShift').value = song.shift;
-    $('#edOffset').value = chart.offset;
-    seek(cur - delta);
-    rate();
-  }
-  $('#edShift').onchange = (e) => setShift(Number(e.target.value) || 0);
   $('#edSnap').onchange = draw;
   $('#edKeys').onchange = (e) => {
     chart.keys = Number(e.target.value);
@@ -260,10 +241,7 @@ const Editor = (() => {
   function onKey(e) {
     if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); toggle(); }
   }
-  function close() {
-    if (playing) toggle();
-    delete song.shift; // 저장 안 했으면 원래 값으로
-  }
+  const close = () => playing && toggle();
 
   const addDiff = () => $('#edDiffAdd').click();
 

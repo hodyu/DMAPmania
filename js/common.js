@@ -85,7 +85,6 @@ async function saveCharts(song, charts) {
   const key = songKey(song), before = chartStore[key] || [];
   for (const c of charts) {
     c.song = key;
-    c.shift = song.shift ?? savedShift(song);
     c.notes.sort((a, b) => a.t - b.t);
     c.stars = starRating(c.notes, c.keys); // 목록에서 매번 계산하지 않게 저장해 둠
     const old = before.find((o) => o.id === c.id);
@@ -165,10 +164,7 @@ function autoChart(chart, durationMs) {
 }
 
 // DMAP 곡은 긴 영상의 start~end 구간
-// 곡 시작 보정(ms): db 의 시작 시간이 어긋날 때 에디터에서 맞춘 값. 채보 파일에 shift 로 저장
-// 에디터에서 바꾸는 중에는 song.shift 에 임시로 들어 있음
-const savedShift = (song) => chartStore[songKey(song)]?.[0]?.shift || 0;
-const segStart = (song) => (song.start || 0) * 1000 + (song.shift ?? savedShift(song));
+const segStart = (song) => (song.start || 0) * 1000;
 const segLength = (song) => (song.end ? song.end * 1000 - segStart(song) : (video.duration || 0) * 1000);
 const seekSong = (song, ms) => (video.currentTime = (segStart(song) + ms) / 1000);
 const songTime = (song) => video.currentTime * 1000 - segStart(song);
